@@ -254,7 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('Supabase signout successful')
           }
         }
-      } catch (_) {
+      } catch {
         console.warn('Supabase signout timed out, continuing with local cleanup...')
       }
       

@@ -90,7 +90,7 @@ export default function Home() {
               <span className="gradient-text-animated">KalaMitra</span>?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-slide-in-up animate-delay-100">
-              We're building the future of artisan commerce with AI-powered tools and a community-driven approach.
+              We&apos;re building the future of artisan commerce with AI-powered tools and a community-driven approach.
             </p>
           </div>
 
