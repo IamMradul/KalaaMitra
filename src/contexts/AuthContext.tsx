@@ -247,14 +247,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const result = await Promise.race([signOutPromise, timeoutPromise])
         if (result && typeof result === 'object' && 'error' in result) {
-          const { error } = result as { error: any }
+          const { error } = result as { error: Error | null }
           if (error) {
             console.error('Supabase signout error:', error)
           } else {
             console.log('Supabase signout successful')
           }
         }
-      } catch (timeoutError) {
+      } catch (_) {
         console.warn('Supabase signout timed out, continuing with local cleanup...')
       }
       

@@ -119,7 +119,7 @@ export default function StallPage() {
           </div>
           
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {stallProfile.name}'s Stall
+            {stallProfile.name}&apos;s Stall
           </h1>
           
           {stallProfile.bio && (

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion } from 'framer-motion'
-import { Plus, Edit, Trash2, Eye, Sparkles, Camera, BookOpen, Palette, LogOut } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, Camera, BookOpen, Palette, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 
@@ -17,7 +17,6 @@ export default function SellerDashboard() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [showAddProduct, setShowAddProduct] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
   const [productsLoading, setProductsLoading] = useState(false)
   const [addProductLoading, setAddProductLoading] = useState(false)
@@ -28,7 +27,7 @@ export default function SellerDashboard() {
       console.log('Testing database connection...')
       
       // Test profiles table
-      const { data: profilesTest, error: profilesError } = await supabase
+      const { error: profilesError } = await supabase
         .from('profiles')
         .select('count')
         .limit(1)
@@ -40,7 +39,7 @@ export default function SellerDashboard() {
       }
       
       // Test products table
-      const { data: productsTest, error: productsError } = await supabase
+      const { error: productsError } = await supabase
         .from('products')
         .select('count')
         .limit(1)
@@ -137,7 +136,7 @@ export default function SellerDashboard() {
       
       // First, let's check if the products table exists and we can access it
       console.log('Testing products table access...')
-      const { data: testData, error: testError } = await supabase
+      const { error: testError } = await supabase
         .from('products')
         .select('count')
         .limit(1)
@@ -403,7 +402,10 @@ export default function SellerDashboard() {
                     <p className="text-lg font-bold text-orange-600">${product.price}</p>
                     <div className="flex space-x-2 mt-3">
                       <button
-                        onClick={() => setEditingProduct(product)}
+                        onClick={() => {
+                          // setEditingProduct(product) // This line was removed
+                          alert('Edit functionality coming soon!')
+                        }}
                         className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Edit className="w-4 h-4 mr-1" />

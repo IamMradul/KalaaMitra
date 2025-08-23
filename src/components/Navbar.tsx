@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { ShoppingCart, User, LogOut, Menu, X, Palette } from 'lucide-react'
+import { ShoppingCart, LogOut, Menu, X, Palette } from 'lucide-react'
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth()

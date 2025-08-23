@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Palette, ShoppingBag, Sparkles, Users, Shield, Zap, Star, Heart, Globe, ArrowRight } from 'lucide-react'
+import { ArrowRight, Palette, ShoppingBag, Users, Shield, Zap } from 'lucide-react'
 
 export default function Home() {
   return (
@@ -17,7 +17,7 @@ export default function Home() {
           <div className="text-center max-w-5xl mx-auto">
             {/* Badge */}
             <div className="inline-flex items-center px-6 py-3 glass-card rounded-full border border-orange-200/50 shadow-soft mb-12 animate-slide-in-up">
-              <Star className="w-5 h-5 text-orange-500 mr-3" />
+              <Zap className="w-5 h-5 text-orange-500 mr-3" />
               <span className="text-sm font-medium text-gray-700">AI-Powered Artisan Marketplace</span>
             </div>
 
@@ -30,9 +30,11 @@ export default function Home() {
             </h1>
             
             {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-16 animate-slide-in-up animate-delay-200">
-              Where tradition meets innovation. Join our community of artisans and art lovers, 
-              preserving cultural heritage while embracing the future of digital commerce.
+            <p className="text-lg text-gray-600 mb-8">
+              Discover unique handcrafted treasures from talented artisans. Every piece tells a story.
+            </p>
+            <p className="text-lg text-gray-600 mb-8">
+              From traditional crafts to modern designs, find pieces that speak to your soul.
             </p>
 
             {/* CTA Buttons */}
@@ -95,7 +97,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-10">
             <div className="card-glass p-10 text-center group animate-slide-in-up animate-delay-100">
               <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
-                <Sparkles className="w-12 h-12 text-gradient-primary" />
+                <Zap className="w-12 h-12 text-gradient-primary" />
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 mb-6">AI-Powered Tools</h3>
               <p className="text-gray-600 leading-relaxed text-lg">
@@ -194,7 +196,7 @@ export default function Home() {
               Ready to Start Your Journey?
             </h2>
             <p className="text-xl text-orange-100 mb-12 leading-relaxed animate-slide-in-up animate-delay-100">
-              Whether you're an artisan looking to showcase your work or an art lover seeking unique pieces, 
+              Whether you&apos;re an artisan looking to showcase your work or an art lover seeking unique pieces, 
               KalaMitra is your gateway to a world of creativity and tradition.
             </p>
             <div className="flex flex-col sm:flex-row gap-8 justify-center animate-slide-in-up animate-delay-200">

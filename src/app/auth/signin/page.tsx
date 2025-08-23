@@ -34,8 +34,9 @@ export default function SignIn() {
     try {
       await signIn(email, password)
       // User will be redirected based on their role
-    } catch (error: any) {
-      setError(error.message || 'Invalid email or password')
+    } catch (error: unknown) {
+      console.error('Signin error details:', error)
+      setError(error instanceof Error ? error.message : 'An error occurred during sign in. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -120,7 +121,7 @@ export default function SignIn() {
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/signup" className="font-medium text-orange-600 hover:text-orange-500">
                 Sign up here
               </Link>
