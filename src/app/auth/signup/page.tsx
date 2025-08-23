@@ -41,7 +41,7 @@ export default function SignUp() {
       await signUp(email, password, name, role)
       // Show success message
       setError('')
-      alert('Account created successfully! Please check your email to confirm your account.')
+      alert('Account created successfully! Please check your email and click the confirmation link. You can then sign in with your credentials.')
     } catch (error: any) {
       console.error('Signup error details:', error)
       setError(error?.message || error?.error_description || 'An error occurred during sign up. Please try again.')

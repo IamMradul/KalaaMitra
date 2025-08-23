@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   useEffect(() => {
     // Get initial session
@@ -65,6 +66,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error)
+        
+        // Check if this is a new user who needs a profile created
+        const pendingProfile = localStorage.getItem('pendingProfile')
+        if (pendingProfile) {
+          try {
+            const profileData = JSON.parse(pendingProfile)
+            if (profileData.id === userId) {
+              console.log('Creating profile for new user:', userId)
+              
+              const { error: createError } = await supabase
+                .from('profiles')
+                .insert([{
+                  id: profileData.id,
+                  name: profileData.name,
+                  email: profileData.email,
+                  role: profileData.role,
+                  bio: null,
+                  profile_image: null,
+                  created_at: new Date().toISOString()
+                }])
+
+              if (createError) {
+                console.error('Failed to create profile:', createError)
+                setProfile(null)
+                return
+              }
+
+              console.log('Profile created successfully')
+              
+              // Remove pending profile data
+              localStorage.removeItem('pendingProfile')
+              
+              // Fetch the newly created profile
+              const { data: newProfile, error: fetchError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single()
+
+              if (fetchError) {
+                console.error('Error fetching new profile:', fetchError)
+                setProfile(null)
+                return
+              }
+
+              setProfile(newProfile)
+              return
+            }
+          } catch (parseError) {
+            console.error('Error parsing pending profile:', parseError)
+          }
+        }
+        
+        // If no pending profile or other error, set profile to null
+        setProfile(null)
         return
       }
 
@@ -72,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(data)
     } catch (error) {
       console.error('Error fetching profile:', error)
+      setProfile(null)
     }
   }
 
@@ -106,51 +163,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log('Auth signup successful:', data)
       console.log('User created:', data.user?.id)
-
+      
+      // Store user data in localStorage for profile creation after email confirmation
       if (data.user) {
-        console.log('Creating profile for user:', data.user.id)
-        
-        // Step 2: Create profile
-        console.log('Step 2: Creating profile...')
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              name: name,
-              email: email,
-              role: role,
-            },
-          ])
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError)
-          console.error('Profile error details:', {
-            message: profileError.message,
-            details: profileError.details,
-            hint: profileError.hint,
-            code: profileError.code
-          })
-          // Don't throw here, as the user was created successfully
-          // We can handle profile creation later
-        } else {
-          console.log('Profile created successfully')
-        }
-
-        // Step 3: Set the profile in state
-        console.log('Step 3: Setting profile in state...')
-        setProfile({
+        localStorage.setItem('pendingProfile', JSON.stringify({
           id: data.user.id,
           name: name,
           email: email,
-          role: role,
-          bio: null,
-          profile_image: null,
-          created_at: new Date().toISOString()
-        })
-        
-        console.log('Signup process completed successfully')
+          role: role
+        }))
       }
+      
+      console.log('Signup process completed successfully')
+      console.log('Please check your email to confirm your account before signing in.')
     } catch (error) {
       console.error('Error signing up:', error)
       console.error('Error type:', typeof error)
@@ -186,19 +211,105 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    // Prevent multiple simultaneous signout attempts
+    if (isSigningOut) {
+      console.log('Signout already in progress, ignoring duplicate call')
+      return
+    }
+    
+    setIsSigningOut(true)
+    
     try {
-      console.log('Signing out user')
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Signout error:', error)
-        throw error
+      console.log('=== SIGNING OUT USER ===')
+      console.log('Current user:', user?.id)
+      console.log('Current profile:', profile?.id)
+      console.log('Current session:', session?.user?.id)
+      
+      // Clear localStorage data
+      console.log('Clearing localStorage...')
+      localStorage.removeItem('pendingProfile')
+      
+      // Clear all state immediately to prevent UI issues
+      console.log('Clearing local state immediately...')
+      setUser(null)
+      setProfile(null)
+      setSession(null)
+      
+      // Sign out from Supabase with timeout
+      console.log('Calling Supabase auth.signOut() with timeout...')
+      
+      // Create a promise with timeout
+      const signOutPromise = supabase.auth.signOut()
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Signout timeout')), 5000)
+      )
+      
+      try {
+        const result = await Promise.race([signOutPromise, timeoutPromise])
+        if (result && typeof result === 'object' && 'error' in result) {
+          const { error } = result as { error: any }
+          if (error) {
+            console.error('Supabase signout error:', error)
+          } else {
+            console.log('Supabase signout successful')
+          }
+        }
+      } catch (timeoutError) {
+        console.warn('Supabase signout timed out, continuing with local cleanup...')
       }
       
-      console.log('Signout successful')
-      setProfile(null)
+      // Manual cleanup as backup
+      console.log('Performing manual session cleanup...')
+      try {
+        // Clear any stored session data by setting an empty session
+        await supabase.auth.setSession({
+          access_token: '',
+          refresh_token: ''
+        })
+      } catch (cleanupError) {
+        console.warn('Manual cleanup failed:', cleanupError)
+      }
+      
+      // Browser-level cleanup
+      console.log('Performing browser-level cleanup...')
+      try {
+        // Clear any stored auth data in browser storage
+        if (typeof window !== 'undefined') {
+          // Clear localStorage
+          localStorage.clear()
+          // Clear sessionStorage
+          sessionStorage.clear()
+          // Clear any cookies related to auth
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
+        }
+      } catch (browserCleanupError) {
+        console.warn('Browser cleanup failed:', browserCleanupError)
+      }
+      
+      console.log('All cleanup completed, redirecting to home page...')
+      
+      // Force a page reload to clear any cached data
+      window.location.href = '/'
+      
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.error('Error during signout:', error)
+      console.log('Attempting to clear state even with error...')
+      
+      // Even if there's an error, clear the local state
+      setUser(null)
+      setProfile(null)
+      setSession(null)
+      localStorage.removeItem('pendingProfile')
+      
+      console.log('State cleared, redirecting to home page...')
+      window.location.href = '/'
+      
       throw error
+    } finally {
+      // Reset the flag
+      setIsSigningOut(false)
     }
   }
 
