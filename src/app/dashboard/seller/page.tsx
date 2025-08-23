@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,12 +17,23 @@ export default function SellerDashboard() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [showAddProduct, setShowAddProduct] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
   const [productsLoading, setProductsLoading] = useState(false)
   const [addProductLoading, setAddProductLoading] = useState(false)
+  const [editProductLoading, setEditProductLoading] = useState(false)
   const [dbStatus, setDbStatus] = useState<string>('Unknown')
+  const [isTestingDb, setIsTestingDb] = useState(false)
+  const hasInitialized = useRef(false)
 
   const testDatabaseConnection = async () => {
+    // Prevent multiple simultaneous database tests
+    if (isTestingDb || dbStatus !== 'Unknown') {
+      console.log('Database test already in progress or completed, skipping...')
+      return
+    }
+
+    setIsTestingDb(true)
     try {
       console.log('Testing database connection...')
       
@@ -55,13 +66,15 @@ export default function SellerDashboard() {
     } catch (error) {
       console.error('Database connection test failed:', error)
       setDbStatus(`Connection failed: ${error}`)
+    } finally {
+      setIsTestingDb(false)
     }
   }
 
   useEffect(() => {
     console.log('Dashboard useEffect - loading:', loading, 'user:', !!user, 'profile:', !!profile)
     
-    if (!loading) {
+    if (!loading && !hasInitialized.current) {
       if (!user) {
         console.log('No user, redirecting to signin')
         router.push('/auth/signin')
@@ -70,12 +83,31 @@ export default function SellerDashboard() {
         router.push('/dashboard')
       } else {
         console.log('User is seller, fetching products and setting stall profile')
-        fetchProducts()
         setStallProfile(profile)
-        testDatabaseConnection() // Test database connection
+        fetchProducts()
+        // Only test database connection once when component mounts
+        if (dbStatus === 'Unknown') {
+          testDatabaseConnection()
+        }
+        hasInitialized.current = true
       }
     }
-  }, [user, profile, loading, router])
+
+    // Cleanup function to reset loading states when component unmounts
+    return () => {
+      setProductsLoading(false)
+      setAddProductLoading(false)
+      setEditProductLoading(false)
+    }
+  }, [user, profile, loading, router, dbStatus])
+
+  // Separate effect to handle product fetching when navigating back
+  useEffect(() => {
+    if (user && profile?.role === 'seller' && !productsLoading && products.length === 0) {
+      console.log('User navigated back, fetching products...')
+      fetchProducts()
+    }
+  }, [user, profile, productsLoading, products.length])
 
   const fetchProducts = async () => {
     if (!user) return
@@ -220,6 +252,61 @@ export default function SellerDashboard() {
     }
   }
 
+  const handleEditProduct = async (productId: string, formData: FormData) => {
+    if (!user) return
+
+    setEditProductLoading(true)
+    
+    const title = formData.get('title') as string
+    const category = formData.get('category') as string
+    const description = formData.get('description') as string
+    const price = parseFloat(formData.get('price') as string)
+    const imageUrl = formData.get('imageUrl') as string
+
+    // Basic validation
+    if (!title || !category || !description || isNaN(price) || price <= 0) {
+      alert('Please fill in all required fields with valid values.')
+      setEditProductLoading(false)
+      return
+    }
+
+    try {
+      console.log('Updating product:', { productId, title, category, description, price, imageUrl })
+      
+      const { error } = await supabase
+        .from('products')
+        .update({
+          title,
+          category,
+          description,
+          price,
+          image_url: imageUrl || null,
+        })
+        .eq('id', productId)
+
+      if (error) {
+        console.error('Error updating product:', error)
+        alert(`Failed to update product: ${error.message}`)
+        throw error
+      }
+
+      console.log('Product updated successfully')
+      alert('Product updated successfully!')
+      
+      setEditingProduct(null)
+      fetchProducts()
+    } catch (error) {
+      console.error('Error updating product:', error)
+      if (error instanceof Error) {
+        alert(`Failed to update product: ${error.message}`)
+      } else {
+        alert('Failed to update product. Please try again.')
+      }
+    } finally {
+      setEditProductLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -274,11 +361,13 @@ export default function SellerDashboard() {
             <p>Products Count: {products.length}</p>
             <p>Products Loading: {productsLoading ? 'Yes' : 'No'}</p>
             <p>Database Status: {dbStatus}</p>
+            <p>Testing DB: {isTestingDb ? 'Yes' : 'No'}</p>
             <button
               onClick={testDatabaseConnection}
-              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+              disabled={isTestingDb || dbStatus !== 'Unknown'}
+              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Test Database Connection
+              {isTestingDb ? 'Testing...' : 'Test Database Connection'}
             </button>
           </div>
         </motion.div>
@@ -403,8 +492,7 @@ export default function SellerDashboard() {
                     <div className="flex space-x-2 mt-3">
                       <button
                         onClick={() => {
-                          // setEditingProduct(product) // This line was removed
-                          alert('Edit functionality coming soon!')
+                          setEditingProduct(product)
                         }}
                         className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -509,6 +597,106 @@ export default function SellerDashboard() {
                     className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {addProductLoading ? 'Adding...' : 'Add Product'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Edit Product Modal */}
+        {editingProduct && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-xl p-6 w-full max-w-md"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Edit Product</h3>
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                const form = e.currentTarget
+                const formData = new FormData(form)
+                handleEditProduct(editingProduct.id, formData)
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Product Title
+                  </label>
+                  <input
+                    name="title"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Enter product title"
+                    defaultValue={editingProduct.title}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <input
+                    name="category"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="e.g., Pottery, Textiles, Jewelry"
+                    defaultValue={editingProduct.category}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    required
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Describe your product"
+                    defaultValue={editingProduct.description}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price ($)
+                  </label>
+                  <input
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="0.00"
+                    defaultValue={editingProduct.price}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Image URL
+                  </label>
+                  <input
+                    name="imageUrl"
+                    type="url"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="https://example.com/image.jpg"
+                    defaultValue={editingProduct.image_url || ''}
+                  />
+                </div>
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setEditingProduct(null)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editProductLoading}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {editProductLoading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>

@@ -119,6 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
+        // If no pending profile and we get a "no rows" error, this user shouldn't exist
+        if (error.code === 'PGRST116' || error.message.includes('0 rows')) {
+          console.error('User exists in auth but has no profile - this should not happen')
+          console.error('This indicates a user was created in auth but no profile was created')
+          
+          // Sign out this orphaned user
+          await signOut()
+          return
+        }
+        
         // If no pending profile or other error, set profile to null
         setProfile(null)
         return
@@ -193,6 +203,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       console.log('Signing in user:', email)
+      
+      // First, let's check if this email actually exists in our profiles table
+      // This prevents creating orphaned auth users when someone tries to sign in
+      // with an email that doesn't exist in our system
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+      
+      if (profileCheckError && (profileCheckError.code === 'PGRST116' || profileCheckError.message.includes('0 rows'))) {
+        console.log('No profile found for email:', email)
+        throw new Error('Invalid email or password. Please check your credentials and try again.')
+      }
+      
+      if (profileCheckError) {
+        console.error('Error checking profile existence:', profileCheckError)
+        throw new Error('Sign in failed. Please try again.')
+      }
+      
+      // Now proceed with the actual signin
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -200,7 +231,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Signin error:', error)
-        throw error
+        console.error('Error message:', error.message)
+        console.error('Error status:', error.status)
+        
+        // Provide user-friendly error messages
+        let userMessage = 'Sign in failed. Please try again.'
+        
+        // Check for various error messages that indicate user doesn't exist or wrong credentials
+        // Note: We show the same message for both cases for security reasons (prevents user enumeration)
+        if (error.message.includes('Invalid login credentials') || 
+            error.message.includes('Invalid login') ||
+            error.message.includes('Invalid credentials') ||
+            error.message.includes('Invalid email') ||
+            error.message.includes('Invalid password') ||
+            error.message.includes('Wrong password') ||
+            error.message.includes('User not found') ||
+            error.message.includes('No user found') ||
+            error.message.includes('User does not exist') ||
+            error.message.includes('Email not found') ||
+            error.message.includes('Account not found')) {
+          userMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (error.message.includes('Email not confirmed') || 
+                   error.message.includes('Email not verified') ||
+                   error.message.includes('Please confirm')) {
+          userMessage = 'Please check your email and click the confirmation link before signing in.'
+        } else if (error.message.includes('Too many requests') || 
+                   error.message.includes('Rate limit') ||
+                   error.message.includes('Too many attempts')) {
+          userMessage = 'Too many sign in attempts. Please wait a moment before trying again.'
+        } else if (error.message.includes('User not found') || 
+                   error.message.includes('No user found') ||
+                   error.message.includes('User does not exist')) {
+          userMessage = 'No account found with this email address. Please sign up first.'
+        }
+        
+        // Create a custom error with user-friendly message
+        const customError = new Error(userMessage)
+        customError.name = error.name
+        throw customError
       }
 
       console.log('Signin successful')

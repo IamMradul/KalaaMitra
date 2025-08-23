@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
@@ -31,12 +31,35 @@ export default function SignIn() {
     setLoading(true)
     setError('')
 
+    // Basic validation
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both email and password.')
+      setLoading(false)
+      return
+    }
+
     try {
       await signIn(email, password)
       // User will be redirected based on their role
     } catch (error: unknown) {
       console.error('Signin error details:', error)
-      setError(error instanceof Error ? error.message : 'An error occurred during sign in. Please try again.')
+      
+      // Handle different types of errors
+      if (error instanceof Error) {
+        setError(error.message)
+        
+        // Log additional error details for debugging
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Error name:', error.name)
+          console.log('Error message:', error.message)
+          console.log('Error stack:', error.stack)
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
+      
+      // Clear password field on error for security
+      setPassword('')
     } finally {
       setLoading(false)
     }
@@ -59,7 +82,8 @@ export default function SignIn() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2" />
               {error}
             </div>
           )}
@@ -126,6 +150,19 @@ export default function SignIn() {
                 Sign up here
               </Link>
             </p>
+          </div>
+
+          {/* Helpful Tips */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-blue-800 mb-2">Having trouble signing in?</h4>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• Make sure your email is confirmed (check your inbox)</li>
+              <li>• Check that Caps Lock is off</li>
+              <li>• Try resetting your password if you forgot it</li>
+              <li>• Ensure you&apos;re using the correct email address</li>
+              <li>• <strong>Note:</strong> For security reasons, we show the same message for wrong credentials and non-existent accounts</li>
+              <li>• If you don&apos;t have an account, please <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">sign up first</Link></li>
+            </ul>
           </div>
         </form>
       </div>
