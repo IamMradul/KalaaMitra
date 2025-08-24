@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion } from 'framer-motion'
-import { Plus, Edit, Trash2, Eye, Camera, BookOpen, Palette, LogOut } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, Camera, Palette, LogOut, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
+import AIProductForm from '@/components/AIProductForm'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -17,6 +18,7 @@ export default function SellerDashboard() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [showAddProduct, setShowAddProduct] = useState(false)
+  const [showAIProductForm, setShowAIProductForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
   const [productsLoading, setProductsLoading] = useState(false)
@@ -398,22 +400,18 @@ export default function SellerDashboard() {
               </Link>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">AI Tools (Coming Soon)</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">AI Tools Available</h3>
               <div className="space-y-3">
                 <button
-                  disabled
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed"
+                  onClick={() => setShowAIProductForm(true)}
+                  className="w-full flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:from-purple-600 hover:to-blue-700 transition-all duration-200"
                 >
                   <Camera className="w-4 h-4 mr-2" />
-                  Enhance Photo with AI
+                  AI Product Creator
                 </button>
-                <button
-                  disabled
-                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Generate Story with AI
-                </button>
+                <div className="text-xs text-gray-600 text-center">
+                  Upload an image to get AI-generated descriptions and pricing suggestions
+                </div>
               </div>
             </div>
           </div>
@@ -429,6 +427,13 @@ export default function SellerDashboard() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-gray-900">Your Products</h2>
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowAIProductForm(true)}
+                className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:from-purple-600 hover:to-blue-700 transition-all duration-200"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Product Creator
+              </button>
               <button
                 onClick={() => setShowAddProduct(true)}
                 className="flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
@@ -702,6 +707,33 @@ export default function SellerDashboard() {
               </form>
             </motion.div>
           </div>
+        )}
+
+        {/* AI Product Form Modal */}
+        {showAIProductForm && (
+          <AIProductForm
+            onSubmit={(formData) => {
+              // Convert FormData to the format expected by handleAddProduct
+              const form = document.createElement('form')
+              formData.forEach((value, key) => {
+                const input = document.createElement('input')
+                input.name = key
+                input.value = value as string
+                form.appendChild(input)
+              })
+              
+              // Create a synthetic event
+              const syntheticEvent = {
+                preventDefault: () => {},
+                currentTarget: form
+              } as React.FormEvent<HTMLFormElement>
+              
+              handleAddProduct(syntheticEvent)
+              setShowAIProductForm(false)
+            }}
+            onCancel={() => setShowAIProductForm(false)}
+            loading={addProductLoading}
+          />
         )}
       </div>
     </div>
