@@ -26,15 +26,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
+  // Function to clear local storage while preserving auth state
+  const clearLocalStorageExceptAuth = () => {
+    try {
+      console.log('Clearing local storage except auth state...')
+      
+      // Get all Supabase auth-related data to preserve
+      const authKeys: string[] = []
+      const authValues: { [key: string]: string | null } = {}
+      
+      // Also preserve pendingProfile for new user signup flow
+      const pendingProfile = localStorage.getItem('pendingProfile')
+      
+      // Collect all Supabase-related keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth'))) {
+          authKeys.push(key)
+          authValues[key] = localStorage.getItem(key)
+        }
+      }
+      
+      console.log('Preserving auth keys:', authKeys)
+      if (pendingProfile) {
+        console.log('Preserving pendingProfile for new user signup flow')
+      }
+      
+      // Clear all local storage
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Restore auth-related data
+      authKeys.forEach(key => {
+        if (authValues[key]) {
+          localStorage.setItem(key, authValues[key])
+        }
+      })
+      
+      // Restore pendingProfile if it exists
+      if (pendingProfile) {
+        localStorage.setItem('pendingProfile', pendingProfile)
+      }
+      
+      // Clear non-auth cookies but preserve auth cookies
+      document.cookie.split(";").forEach(function(c) { 
+        const cookieName = c.split("=")[0].trim()
+        // Don't clear Supabase auth cookies
+        if (!cookieName.includes('sb-') && !cookieName.includes('supabase') && !cookieName.includes('auth')) {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        }
+      });
+      
+      console.log('Local storage cleared while preserving auth state')
+    } catch (error) {
+      console.warn('Error clearing local storage:', error)
+    }
+  }
+
   useEffect(() => {
-    // Get initial session
+    // Add event listener for page reload
+    const handleBeforeUnload = () => {
+      clearLocalStorageExceptAuth()
+    }
+    
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Get initial session first (before clearing storage)
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id)
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
       }
       setLoading(false)
+      
+      // Only clear storage after we've established the session
+      // This ensures auth tokens are preserved for the session check
+      setTimeout(() => {
+        clearLocalStorageExceptAuth()
+      }, 100)
     })
 
     // Listen for auth changes
@@ -52,12 +123,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
   }, [])
 
   const fetchProfile = async (userId: string) => {
     try {
       console.log('Fetching profile for user:', userId)
+      
+      // Add a small delay to ensure auth is fully established
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -66,6 +144,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching profile:', error)
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        })
         
         // Check if this is a new user who needs a profile created
         const pendingProfile = localStorage.getItem('pendingProfile')
@@ -134,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      console.log('Profile fetched:', data)
+      console.log('Profile fetched successfully:', data)
       setProfile(data)
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -147,6 +230,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Starting signup process for:', email, 'role:', role)
       console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
       console.log('Supabase Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+      
+      // Check if user already exists in profiles table
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+      
+      if (existingProfile) {
+        throw new Error('An account with this email already exists. Please sign in instead.')
+      }
       
       // Step 1: Create auth user
       console.log('Step 1: Creating auth user...')
@@ -176,12 +270,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Store user data in localStorage for profile creation after email confirmation
       if (data.user) {
-        localStorage.setItem('pendingProfile', JSON.stringify({
+        const pendingProfileData = {
           id: data.user.id,
           name: name,
           email: email,
           role: role
-        }))
+        }
+        localStorage.setItem('pendingProfile', JSON.stringify(pendingProfileData))
+        console.log('Pending profile stored:', pendingProfileData)
       }
       
       console.log('Signup process completed successfully')
@@ -224,7 +320,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Now proceed with the actual signin
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -238,7 +334,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let userMessage = 'Sign in failed. Please try again.'
         
         // Check for various error messages that indicate user doesn't exist or wrong credentials
-        // Note: We show the same message for both cases for security reasons (prevents user enumeration)
         if (error.message.includes('Invalid login credentials') || 
             error.message.includes('Invalid login') ||
             error.message.includes('Invalid credentials') ||
@@ -259,10 +354,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                    error.message.includes('Rate limit') ||
                    error.message.includes('Too many attempts')) {
           userMessage = 'Too many sign in attempts. Please wait a moment before trying again.'
-        } else if (error.message.includes('User not found') || 
-                   error.message.includes('No user found') ||
-                   error.message.includes('User does not exist')) {
-          userMessage = 'No account found with this email address. Please sign up first.'
         }
         
         // Create a custom error with user-friendly message
@@ -271,7 +362,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw customError
       }
 
-      console.log('Signin successful')
+      console.log('Signin successful:', data)
+      
+      // The auth state change listener will handle setting the user and fetching profile
+      // No need to manually set state here
     } catch (error) {
       console.error('Error signing in:', error)
       throw error
@@ -293,9 +387,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Current profile:', profile?.id)
       console.log('Current session:', session?.user?.id)
       
-      // Clear localStorage data
-      console.log('Clearing localStorage...')
-      localStorage.removeItem('pendingProfile')
+      // Clear all localStorage data including auth
+      console.log('Clearing all localStorage including auth...')
+      localStorage.clear()
+      sessionStorage.clear()
       
       // Clear all state immediately to prevent UI issues
       console.log('Clearing local state immediately...')

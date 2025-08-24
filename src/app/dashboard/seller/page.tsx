@@ -712,24 +712,29 @@ export default function SellerDashboard() {
         {/* AI Product Form Modal */}
         {showAIProductForm && (
           <AIProductForm
-            onSubmit={(formData) => {
-              // Convert FormData to the format expected by handleAddProduct
-              const form = document.createElement('form')
-              formData.forEach((value, key) => {
-                const input = document.createElement('input')
-                input.name = key
-                input.value = value as string
-                form.appendChild(input)
-              })
-              
-              // Create a synthetic event
-              const syntheticEvent = {
-                preventDefault: () => {},
-                currentTarget: form
-              } as React.FormEvent<HTMLFormElement>
-              
-              handleAddProduct(syntheticEvent)
-              setShowAIProductForm(false)
+            onSubmit={async (formData) => {
+              try {
+                // Convert FormData to the format expected by handleAddProduct
+                const form = document.createElement('form')
+                formData.forEach((value, key) => {
+                  const input = document.createElement('input')
+                  input.name = key
+                  input.value = value as string
+                  form.appendChild(input)
+                })
+                
+                // Create a synthetic event
+                const syntheticEvent = {
+                  preventDefault: () => {},
+                  currentTarget: form
+                } as React.FormEvent<HTMLFormElement>
+                
+                await handleAddProduct(syntheticEvent)
+                setShowAIProductForm(false)
+              } catch (error) {
+                console.error('Error submitting AI form:', error)
+                // Don't close the form if there's an error
+              }
             }}
             onCancel={() => setShowAIProductForm(false)}
             loading={addProductLoading}

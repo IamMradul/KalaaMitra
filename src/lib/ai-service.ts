@@ -30,7 +30,121 @@ export class AIService {
   }
 
   /**
-   * Analyze an image and generate product description and pricing
+   * Analyze an image from a File object and generate product description and pricing
+   */
+  async analyzeProductImageFromFile(file: File): Promise<AIAnalysisResult> {
+    try {
+      // Convert file to base64
+      const base64Image = await this.fileToBase64(file);
+      
+      // Prepare the prompt for the AI
+      const prompt = `
+        Analyze this image of an artisanal product and provide ONLY a JSON response with no additional text, markdown, or formatting.
+        
+        Return exactly this JSON structure:
+        {
+          "description": "detailed description here",
+          "pricingSuggestion": {
+            "minPrice": 50,
+            "maxPrice": 150,
+            "reasoning": "pricing reasoning here"
+          },
+          "category": "category name",
+          "tags": ["tag1", "tag2", "tag3"]
+        }
+        
+        Requirements:
+        1. A detailed, engaging product description (2-3 sentences) that highlights:
+           - Materials used
+           - Craftsmanship quality
+           - Cultural significance
+           - Unique features
+        
+        2. A pricing suggestion with reasoning based on:
+           - Materials quality
+           - Craftsmanship complexity
+           - Market value for similar items
+           - Cultural significance
+           - Uniqueness
+        
+        3. Product category (e.g., Pottery, Textiles, Jewelry, Woodwork, Metalwork)
+        
+        4. Relevant tags for searchability
+        
+        IMPORTANT: Return ONLY the JSON object, no markdown, no code blocks, no additional text.
+        Focus on helping artisans understand the true value of their work and avoid underpricing.
+      `;
+
+      // Create the image part for the API
+      const imagePart = {
+        inlineData: {
+          data: base64Image,
+          mimeType: file.type || 'image/jpeg'
+        }
+      };
+
+      // Generate content using Gemini 1.5 Flash
+      const result = await this.model.generateContent([prompt, imagePart]);
+      const response_text = result.response.text();
+      
+      // Extract JSON from the response (AI might return markdown with code blocks)
+      let jsonText = response_text;
+      
+      // Remove markdown code blocks if present
+      if (response_text.includes('```json')) {
+        const jsonMatch = response_text.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonText = jsonMatch[1].trim();
+        }
+      } else if (response_text.includes('```')) {
+        // Handle case where AI returns just code blocks without language specifier
+        const codeMatch = response_text.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          jsonText = codeMatch[1].trim();
+        }
+      }
+      
+      // Clean up any remaining markdown or extra text
+      jsonText = jsonText.replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+      
+      // Parse the JSON response
+      let aiResult;
+      try {
+        aiResult = JSON.parse(jsonText);
+      } catch (parseError) {
+        console.error('JSON parsing failed:', parseError);
+        console.error('Raw response:', response_text);
+        console.error('Extracted JSON text:', jsonText);
+        throw new Error('AI response format is invalid. Please try again with a different image.');
+      }
+      
+      // Validate the response structure
+      if (!aiResult.description || !aiResult.pricingSuggestion || !aiResult.category || !aiResult.tags) {
+        console.error('Invalid AI response structure:', aiResult);
+        throw new Error('AI response is incomplete. Please try again.');
+      }
+      
+      return {
+        description: aiResult.description,
+        pricingSuggestion: {
+          minPrice: parseFloat(aiResult.pricingSuggestion.minPrice),
+          maxPrice: parseFloat(aiResult.pricingSuggestion.maxPrice),
+          reasoning: aiResult.pricingSuggestion.reasoning
+        },
+        category: aiResult.category,
+        tags: aiResult.tags
+      };
+    } catch (error) {
+      console.error('AI analysis failed:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to analyze image. Please try again.');
+    }
+  }
+
+  /**
+   * Analyze an image from URL and generate product description and pricing
    */
   async analyzeProductImage(imageUrl: string): Promise<AIAnalysisResult> {
     try {
@@ -207,6 +321,23 @@ export class AIService {
       console.error('Pricing insights failed:', error);
       throw new Error('Failed to get pricing insights. Please try again.');
     }
+  }
+
+  /**
+   * Convert file to base64 for image processing
+   */
+  private async fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove the data:image/...;base64, prefix
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   /**

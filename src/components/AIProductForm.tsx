@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react'
 import AIService, { AIAnalysisResult } from '@/lib/ai-service'
+import { supabase } from '@/lib/supabase'
 
 interface AIProductFormProps {
   onSubmit: (formData: FormData) => void
@@ -35,7 +36,9 @@ export default function AIProductForm({
   initialData = {}
 }: AIProductFormProps) {
   const [imageUrl, setImageUrl] = useState(initialData.imageUrl || '')
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null)
   const [showAiResult, setShowAiResult] = useState(false)
   const [error, setError] = useState('')
@@ -44,8 +47,10 @@ export default function AIProductForm({
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Create a temporary URL for preview
       const url = URL.createObjectURL(file)
       setImageUrl(url)
+      setUploadedFile(file)
       setAiResult(null)
       setShowAiResult(false)
       setError('')
@@ -55,9 +60,47 @@ export default function AIProductForm({
   const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value
     setImageUrl(url)
+    setUploadedFile(null) // Clear uploaded file when using URL
     setAiResult(null)
     setShowAiResult(false)
     setError('')
+  }
+
+  const uploadImageToSupabase = async (file: File): Promise<string> => {
+    try {
+      console.log('Starting upload for file:', file.name, 'Size:', file.size)
+      
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `product-images/${fileName}`
+
+      console.log('Uploading to path:', filePath)
+
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Upload error:', error)
+        throw new Error(`Failed to upload image: ${error.message}`)
+      }
+
+      console.log('Upload successful, getting public URL...')
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath)
+
+      console.log('Public URL generated:', publicUrl)
+      return publicUrl
+    } catch (error) {
+      console.error('Error in uploadImageToSupabase:', error)
+      throw error
+    }
   }
 
   const analyzeImage = async () => {
@@ -71,9 +114,18 @@ export default function AIProductForm({
 
     try {
       const aiService = AIService.getInstance()
-      const result = await aiService.analyzeProductImage(imageUrl)
-      setAiResult(result)
-      setShowAiResult(true)
+      
+      // If we have an uploaded file, use it directly for AI analysis
+      if (uploadedFile) {
+        const result = await aiService.analyzeProductImageFromFile(uploadedFile)
+        setAiResult(result)
+        setShowAiResult(true)
+      } else {
+        // Use the URL for AI analysis
+        const result = await aiService.analyzeProductImage(imageUrl)
+        setAiResult(result)
+        setShowAiResult(true)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze image')
     } finally {
@@ -106,10 +158,41 @@ export default function AIProductForm({
     }
   }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    onSubmit(formData)
+    setIsUploading(true)
+    setError('')
+
+    try {
+      const formData = new FormData(e.currentTarget)
+      
+      // If we have an uploaded file, upload it to Supabase first
+      if (uploadedFile) {
+        console.log('Uploading file to Supabase...')
+        const uploadedImageUrl = await uploadImageToSupabase(uploadedFile)
+        console.log('Upload successful, URL:', uploadedImageUrl)
+        formData.set('imageUrl', uploadedImageUrl)
+      } else if (imageUrl && !imageUrl.startsWith('blob:')) {
+        // If it's a URL (not a blob), use it directly
+        console.log('Using existing URL:', imageUrl)
+        formData.set('imageUrl', imageUrl)
+      } else {
+        setError('Please provide a valid image')
+        setIsUploading(false)
+        return
+      }
+
+      console.log('Calling onSubmit with formData...')
+      await onSubmit(formData)
+      console.log('onSubmit completed successfully')
+      
+      // Close the form after successful submission
+      onCancel()
+    } catch (err) {
+      console.error('Error in handleSubmit:', err)
+      setError(err instanceof Error ? err.message : 'Failed to upload image')
+      setIsUploading(false)
+    }
   }
 
   return (
@@ -329,10 +412,19 @@ export default function AIProductForm({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isUploading}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save Product'}
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading Image...
+                </>
+              ) : loading ? (
+                'Saving...'
+              ) : (
+                'Save Product'
+              )}
             </button>
           </div>
         </form>
