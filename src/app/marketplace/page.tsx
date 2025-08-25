@@ -11,6 +11,12 @@ import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 
 type ProductBase = Database['public']['Tables']['products']['Row']
+type ProductWithFeatures = ProductBase & {
+  image_avg_r?: number | null
+  image_avg_g?: number | null
+  image_avg_b?: number | null
+  image_ahash?: string | null
+}
 type Product = ProductBase & {
   seller: {
     name: string
@@ -84,7 +90,7 @@ export default function Marketplace() {
   useEffect(() => {
     if (!user) return
     if (!searchTerm) return
-    if (searchLogTimer) clearTimeout(searchLogTimer as any)
+    if (searchLogTimer) clearTimeout(searchLogTimer)
     const t = setTimeout(() => {
       logActivity({ userId: user.id, activityType: 'search', query: searchTerm })
     }, 800)
@@ -127,8 +133,8 @@ export default function Marketplace() {
         const scores = new Map<string, number>()
         const viewedIds = new Set<string>()
         const viewedCategories = new Set<string>()
-        const productById = new Map<string, any>()
-        for (const p of allProducts) productById.set(p.id, p)
+        const productById = new Map<string, ProductWithFeatures>()
+        for (const p of allProducts as ProductWithFeatures[]) productById.set(p.id, p)
 
         for (const a of activities) {
           if (a.activity_type === 'view' && a.product_id) {
@@ -161,7 +167,9 @@ export default function Marketplace() {
         }
 
         // Content-based similarity: title/description token overlap with viewed products
-        const viewedProducts = [...viewedIds].map(id => productById.get(id)).filter(Boolean)
+        const viewedProducts = [...viewedIds]
+          .map(id => productById.get(id))
+          .filter((p): p is ProductWithFeatures => Boolean(p))
         const tokenize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean)
         const toSet = (arr: string[]) => new Set(arr)
         const jaccard = (a: Set<string>, b: Set<string>) => {
@@ -170,7 +178,7 @@ export default function Marketplace() {
           const uni = a.size + b.size - inter
           return uni === 0 ? 0 : inter / uni
         }
-        for (const p of allProducts) {
+        for (const p of allProducts as ProductWithFeatures[]) {
           if (viewedIds.has(p.id)) continue
           let bestSim = 0
           for (const vp of viewedProducts) {
@@ -187,9 +195,9 @@ export default function Marketplace() {
         }
 
         // Image-based similarity (fast): average color distance + aHash Hamming distance
-        const colorOf = (x: any) => x && x.image_avg_r != null ? { r: x.image_avg_r, g: x.image_avg_g, b: x.image_avg_b } : null
-        const aHashOf = (x: any) => x && x.image_ahash ? String(x.image_ahash) : null
-        for (const p of allProducts) {
+        const colorOf = (x: ProductWithFeatures | undefined | null) => x && x.image_avg_r != null ? { r: x.image_avg_r as number, g: x.image_avg_g as number, b: x.image_avg_b as number } : null
+        const aHashOf = (x: ProductWithFeatures | undefined | null) => x && x.image_ahash ? String(x.image_ahash) : null
+        for (const p of allProducts as ProductWithFeatures[]) {
           if (viewedIds.has(p.id)) continue
           const pc = colorOf(p)
           const ph = aHashOf(p)
@@ -220,7 +228,7 @@ export default function Marketplace() {
         // "Exact same one in different price": boost items with very similar titles in same category but different id
         const normalizeTitle = (s: string) => (s || '').toLowerCase().replace(/\s+/g, ' ').trim()
         const viewedTitleNorms = new Set(viewedProducts.map(vp => normalizeTitle(vp.title)))
-        for (const p of allProducts) {
+        for (const p of allProducts as ProductWithFeatures[]) {
           if (viewedIds.has(p.id)) continue
           const nt = normalizeTitle(p.title)
           if (viewedTitleNorms.has(nt)) {
@@ -233,9 +241,9 @@ export default function Marketplace() {
           return
         }
 
-        const ranked = [...allProducts]
+        const ranked = [...(allProducts as ProductWithFeatures[])]
           .filter(p => scores.has(p.id) && !viewedIds.has(p.id))
-          .sort((a: any, b: any) => {
+          .sort((a: ProductWithFeatures, b: ProductWithFeatures) => {
             const sa = scores.get(a.id) || 0
             const sb = scores.get(b.id) || 0
             if (sb !== sa) return sb - sa

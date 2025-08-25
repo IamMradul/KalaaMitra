@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -58,9 +59,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Rank by score then recency tie-breaker
-    const ranked = [...allProducts]
+    const ranked = [...(allProducts as Database['public']['Tables']['products']['Row'][])]
       .filter(p => scores.has(p.id))
-      .sort((a: any, b: any) => {
+      .sort((a, b) => {
         const sa = scores.get(a.id) || 0
         const sb = scores.get(b.id) || 0
         if (sb !== sa) return sb - sa
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
       .slice(0, 12)
 
     return NextResponse.json({ products: ranked })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ products: [] })
   }
 }

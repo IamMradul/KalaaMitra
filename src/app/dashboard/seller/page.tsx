@@ -209,11 +209,12 @@ export default function SellerDashboard() {
         ])
         .select()
       
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Database insert timeout after 10 seconds')), 10000)
       })
       
-      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any
+      const raced = await Promise.race([insertPromise, timeoutPromise])
+      const { data, error } = raced as { data: Product[] | null; error: { message: string; details?: string; hint?: string; code?: string } | null }
 
       if (error) {
         console.error('Error adding product:', error)
