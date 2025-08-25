@@ -29,7 +29,6 @@ export default function SellerDashboard() {
   const [dbStatus, setDbStatus] = useState<string>('Unknown')
   const [isTestingDb, setIsTestingDb] = useState(false)
   const hasInitialized = useRef(false)
-  const isComponentMounted = useRef(true)
 
   const testDatabaseConnection = async () => {
     // Prevent multiple simultaneous database tests
@@ -77,8 +76,6 @@ export default function SellerDashboard() {
   }
 
   useEffect(() => {
-    isComponentMounted.current = true
-    
     console.log('Dashboard useEffect - loading:', loading, 'user:', !!user, 'profile:', !!profile)
     
     if (!loading && !hasInitialized.current) {
@@ -102,10 +99,6 @@ export default function SellerDashboard() {
 
     // Cleanup function to reset loading states when component unmounts
     return () => {
-      isComponentMounted.current = false
-      // Reset form states when component unmounts
-      setShowAIProductForm(false)
-      setEditingProduct(null)
       setProductsLoading(false)
       setAddProductLoading(false)
       setEditProductLoading(false)
@@ -147,7 +140,7 @@ export default function SellerDashboard() {
 
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!user || !isComponentMounted.current) {
+    if (!user) {
       alert('User not authenticated')
       return
     }
@@ -170,9 +163,7 @@ export default function SellerDashboard() {
     // Basic validation
     if (!title || !category || !description || isNaN(price) || price <= 0) {
       alert('Please fill in all required fields with valid values.')
-      if (isComponentMounted.current) {
-        setAddProductLoading(false)
-      }
+      setAddProductLoading(false)
       return
     }
 
@@ -264,18 +255,12 @@ export default function SellerDashboard() {
     } catch (error) {
       console.error('Error adding product:', error)
       if (error instanceof Error) {
-        if (error.message.includes('timeout')) {
-          alert('Upload timed out after 10 seconds. Please try refreshing the page and uploading again.')
-        } else {
-          alert(`Failed to add product: ${error.message}`)
-        }
+        alert(`Failed to add product: ${error.message}`)
       } else {
         alert('Failed to add product. Please try again.')
       }
     } finally {
-      if (isComponentMounted.current) {
-        setAddProductLoading(false)
-      }
+      setAddProductLoading(false)
     }
   }
 
@@ -296,7 +281,7 @@ export default function SellerDashboard() {
   }
 
   const handleEditProduct = async (productId: string, formData: FormData) => {
-    if (!user || !isComponentMounted.current) return
+    if (!user) return
 
     setEditProductLoading(true)
     
@@ -309,17 +294,14 @@ export default function SellerDashboard() {
     // Basic validation
     if (!title || !category || !description || isNaN(price) || price <= 0) {
       alert('Please fill in all required fields with valid values.')
-      if (isComponentMounted.current) {
-        setEditProductLoading(false)
-      }
+      setEditProductLoading(false)
       return
     }
 
     try {
       console.log('Updating product:', { productId, title, category, description, price, imageUrl })
       
-      // Add timeout to prevent hanging
-      const updatePromise = supabase
+      const { error } = await supabase
         .from('products')
         .update({
           title,
@@ -329,13 +311,6 @@ export default function SellerDashboard() {
           image_url: imageUrl || null,
         })
         .eq('id', productId)
-
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Database update timeout after 10 seconds')), 10000)
-      })
-      
-      const raced = await Promise.race([updatePromise, timeoutPromise])
-      const { error } = raced as { error: { message: string; details?: string; hint?: string; code?: string } | null }
 
       if (error) {
         console.error('Error updating product:', error)
@@ -351,18 +326,12 @@ export default function SellerDashboard() {
     } catch (error) {
       console.error('Error updating product:', error)
       if (error instanceof Error) {
-        if (error.message.includes('timeout')) {
-          alert('Update timed out after 10 seconds. Please try refreshing the page and updating again.')
-        } else {
-          alert(`Failed to update product: ${error.message}`)
-        }
+        alert(`Failed to update product: ${error.message}`)
       } else {
         alert('Failed to update product. Please try again.')
       }
     } finally {
-      if (isComponentMounted.current) {
-        setEditProductLoading(false)
-      }
+      setEditProductLoading(false)
     }
   }
 
@@ -601,9 +570,7 @@ export default function SellerDashboard() {
             onSubmit={async (formData) => {
               try {
                 await handleEditProduct(editingProduct.id, formData)
-                if (isComponentMounted.current) {
-                  setEditingProduct(null)
-                }
+                setEditingProduct(null)
               } catch (error) {
                 console.error('Error saving edited product:', error)
                 // keep modal open on error
@@ -635,9 +602,7 @@ export default function SellerDashboard() {
                 } as React.FormEvent<HTMLFormElement>
                 
                 await handleAddProduct(syntheticEvent)
-                if (isComponentMounted.current) {
-                  setShowAIProductForm(false)
-                }
+                setShowAIProductForm(false)
               } catch (error) {
                 console.error('Error submitting AI form:', error)
                 // Don't close the form if there's an error
