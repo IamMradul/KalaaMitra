@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import AIService from '@/lib/ai-service'
+import AIService, { type SellerAnalyticsSnapshot } from '@/lib/ai-service'
 
 type Props = { sellerId: string }
 
@@ -160,11 +160,12 @@ export default function SellerAnalytics({ sellerId }: Props) {
                 try {
                   setQaLoading(true)
                   const ai = AIService.getInstance()
-                  const tips = await ai.answerSellerQuestion({
+                  const snapshot: SellerAnalyticsSnapshot = {
                     totalViews,
                     uniqueVisitors,
-                    topProducts
-                  } as any, question)
+                    topProducts: topProducts.map(t => ({ title: t.title, views: t.views }))
+                  }
+                  const tips = await ai.answerSellerQuestion(snapshot, question)
                   setAnswer(tips)
                 } finally {
                   setQaLoading(false)
