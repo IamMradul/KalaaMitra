@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion } from 'framer-motion'
-import { Plus, Edit, Trash2, Eye, Camera, Palette, LogOut, Sparkles } from 'lucide-react'
+import { Edit, Trash2, Eye, Palette, LogOut, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import { extractImageFeatures } from '@/lib/image-similarity'
 import AIProductForm from '@/components/AIProductForm'
 import SellerAnalytics from './SellerAnalytics'
+import ProfileManager from './ProfileManager'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -19,7 +20,6 @@ export default function SellerDashboard() {
   const { user, profile, loading, signOut } = useAuth()
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
-  const [showAddProduct, setShowAddProduct] = useState(false)
   const [showAIProductForm, setShowAIProductForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
@@ -29,6 +29,7 @@ export default function SellerDashboard() {
   const [dbStatus, setDbStatus] = useState<string>('Unknown')
   const [isTestingDb, setIsTestingDb] = useState(false)
   const hasInitialized = useRef(false)
+  const isComponentMounted = useRef(true)
 
   const testDatabaseConnection = async () => {
     // Prevent multiple simultaneous database tests
@@ -76,6 +77,8 @@ export default function SellerDashboard() {
   }
 
   useEffect(() => {
+    isComponentMounted.current = true
+    
     console.log('Dashboard useEffect - loading:', loading, 'user:', !!user, 'profile:', !!profile)
     
     if (!loading && !hasInitialized.current) {
@@ -99,6 +102,10 @@ export default function SellerDashboard() {
 
     // Cleanup function to reset loading states when component unmounts
     return () => {
+      isComponentMounted.current = false
+      // Reset form states when component unmounts
+      setShowAIProductForm(false)
+      setEditingProduct(null)
       setProductsLoading(false)
       setAddProductLoading(false)
       setEditProductLoading(false)
@@ -134,9 +141,13 @@ export default function SellerDashboard() {
     }
   }
 
+  const handleProfileUpdate = (updatedProfile: Profile) => {
+    setStallProfile(updatedProfile)
+  }
+
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!user) {
+    if (!user || !isComponentMounted.current) {
       alert('User not authenticated')
       return
     }
@@ -159,7 +170,9 @@ export default function SellerDashboard() {
     // Basic validation
     if (!title || !category || !description || isNaN(price) || price <= 0) {
       alert('Please fill in all required fields with valid values.')
-      setAddProductLoading(false)
+      if (isComponentMounted.current) {
+        setAddProductLoading(false)
+      }
       return
     }
 
@@ -247,17 +260,22 @@ export default function SellerDashboard() {
         formElement.reset()
       }
       
-      setShowAddProduct(false)
       fetchProducts()
     } catch (error) {
       console.error('Error adding product:', error)
       if (error instanceof Error) {
-        alert(`Failed to add product: ${error.message}`)
+        if (error.message.includes('timeout')) {
+          alert('Upload timed out after 10 seconds. Please try refreshing the page and uploading again.')
+        } else {
+          alert(`Failed to add product: ${error.message}`)
+        }
       } else {
         alert('Failed to add product. Please try again.')
       }
     } finally {
-      setAddProductLoading(false)
+      if (isComponentMounted.current) {
+        setAddProductLoading(false)
+      }
     }
   }
 
@@ -278,7 +296,7 @@ export default function SellerDashboard() {
   }
 
   const handleEditProduct = async (productId: string, formData: FormData) => {
-    if (!user) return
+    if (!user || !isComponentMounted.current) return
 
     setEditProductLoading(true)
     
@@ -291,14 +309,17 @@ export default function SellerDashboard() {
     // Basic validation
     if (!title || !category || !description || isNaN(price) || price <= 0) {
       alert('Please fill in all required fields with valid values.')
-      setEditProductLoading(false)
+      if (isComponentMounted.current) {
+        setEditProductLoading(false)
+      }
       return
     }
 
     try {
       console.log('Updating product:', { productId, title, category, description, price, imageUrl })
       
-      const { error } = await supabase
+      // Add timeout to prevent hanging
+      const updatePromise = supabase
         .from('products')
         .update({
           title,
@@ -308,6 +329,13 @@ export default function SellerDashboard() {
           image_url: imageUrl || null,
         })
         .eq('id', productId)
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database update timeout after 10 seconds')), 10000)
+      })
+      
+      const raced = await Promise.race([updatePromise, timeoutPromise])
+      const { error } = raced as { error: { message: string; details?: string; hint?: string; code?: string } | null }
 
       if (error) {
         console.error('Error updating product:', error)
@@ -323,12 +351,18 @@ export default function SellerDashboard() {
     } catch (error) {
       console.error('Error updating product:', error)
       if (error instanceof Error) {
-        alert(`Failed to update product: ${error.message}`)
+        if (error.message.includes('timeout')) {
+          alert('Update timed out after 10 seconds. Please try refreshing the page and updating again.')
+        } else {
+          alert(`Failed to update product: ${error.message}`)
+        }
       } else {
         alert('Failed to update product. Please try again.')
       }
     } finally {
-      setEditProductLoading(false)
+      if (isComponentMounted.current) {
+        setEditProductLoading(false)
+      }
     }
   }
 
@@ -397,44 +431,50 @@ export default function SellerDashboard() {
           </div>
         </motion.div>
 
-        {/* Stall Profile Section */}
+        {/* Profile Manager Section */}
+        {stallProfile && (
+          <ProfileManager 
+            profile={stallProfile} 
+            products={products} 
+            onProfileUpdate={handleProfileUpdate} 
+          />
+        )}
+
+        {/* Quick Actions Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
         >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Virtual Stall</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Stall Information</h3>
-              <p className="text-gray-600 mb-2">
-                <strong>Name:</strong> {stallProfile?.name}
-              </p>
-              <p className="text-gray-600 mb-2">
-                <strong>Bio:</strong> {stallProfile?.bio || 'No bio added yet'}
-              </p>
-              <Link
-                href={`/stall/${user.id}`}
-                className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                View Public Stall
-              </Link>
-            </div>
-            <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">AI Tools Available</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">Product Management</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => setShowAIProductForm(true)}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:from-purple-600 hover:to-blue-700 transition-all duration-200"
+                  className="w-full flex items-center justify-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
                 >
-                  <Camera className="w-4 h-4 mr-2" />
-                  AI Product Creator
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Add Product with AI
                 </button>
                 <div className="text-xs text-gray-600 text-center">
                   Upload an image to get AI-generated descriptions and pricing suggestions
                 </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">View Your Stall</h3>
+              <Link
+                href={`/stall/${user.id}`}
+                className="inline-flex items-center justify-center w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Public Stall
+              </Link>
+              <div className="text-xs text-gray-600 text-center mt-2">
+                See how customers view your stall and products
               </div>
             </div>
           </div>
@@ -463,17 +503,10 @@ export default function SellerDashboard() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowAIProductForm(true)}
-                className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-lg hover:from-purple-600 hover:to-blue-700 transition-all duration-200"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Product Creator
-              </button>
-              <button
-                onClick={() => setShowAddProduct(true)}
                 className="flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
+                <Sparkles className="w-4 h-4 mr-2" />
+                Add Product with AI
               </button>
               <button
                 onClick={() => {
@@ -527,7 +560,7 @@ export default function SellerDashboard() {
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-900 mb-2">{product.title}</h3>
                     <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-                    <p className="text-lg font-bold text-orange-600">${product.price}</p>
+                    <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
                     <div className="flex space-x-2 mt-3">
                       <button
                         onClick={() => {
@@ -553,194 +586,32 @@ export default function SellerDashboard() {
           )}
         </motion.div>
 
-        {/* Add Product Modal */}
-        {showAddProduct && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl p-6 w-full max-w-md"
-            >
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Add New Product</h3>
-              <form onSubmit={handleAddProduct} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Title
-                  </label>
-                  <input
-                    name="title"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Enter product title"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <input
-                    name="category"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="e.g., Pottery, Textiles, Jewelry"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Describe your product"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price ($)
-                  </label>
-                  <input
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
-                  </label>
-                  <input
-                    name="imageUrl"
-                    type="url"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddProduct(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={addProductLoading}
-                    className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {addProductLoading ? 'Adding...' : 'Add Product'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
 
-        {/* Edit Product Modal */}
+
+        {/* Edit Product Modal (AI Unified) */}
         {editingProduct && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl p-6 w-full max-w-md"
-            >
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Edit Product</h3>
-              <form onSubmit={(e) => {
-                e.preventDefault()
-                const form = e.currentTarget
-                const formData = new FormData(form)
-                handleEditProduct(editingProduct.id, formData)
-              }} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Title
-                  </label>
-                  <input
-                    name="title"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Enter product title"
-                    defaultValue={editingProduct.title}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
-                  <input
-                    name="category"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="e.g., Pottery, Textiles, Jewelry"
-                    defaultValue={editingProduct.category}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Describe your product"
-                    defaultValue={editingProduct.description}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price ($)
-                  </label>
-                  <input
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="0.00"
-                    defaultValue={editingProduct.price}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL
-                  </label>
-                  <input
-                    name="imageUrl"
-                    type="url"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="https://example.com/image.jpg"
-                    defaultValue={editingProduct.image_url || ''}
-                  />
-                </div>
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setEditingProduct(null)}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={editProductLoading}
-                    className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {editProductLoading ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
+          <AIProductForm
+            initialData={{
+              title: editingProduct.title || undefined,
+              category: editingProduct.category || undefined,
+              description: editingProduct.description || undefined,
+              price: editingProduct.price || undefined,
+              imageUrl: editingProduct.image_url || undefined,
+            }}
+            onSubmit={async (formData) => {
+              try {
+                await handleEditProduct(editingProduct.id, formData)
+                if (isComponentMounted.current) {
+                  setEditingProduct(null)
+                }
+              } catch (error) {
+                console.error('Error saving edited product:', error)
+                // keep modal open on error
+              }
+            }}
+            onCancel={() => setEditingProduct(null)}
+            loading={editProductLoading}
+          />
         )}
 
         {/* AI Product Form Modal */}
@@ -764,7 +635,9 @@ export default function SellerDashboard() {
                 } as React.FormEvent<HTMLFormElement>
                 
                 await handleAddProduct(syntheticEvent)
-                setShowAIProductForm(false)
+                if (isComponentMounted.current) {
+                  setShowAIProductForm(false)
+                }
               } catch (error) {
                 console.error('Error submitting AI form:', error)
                 // Don't close the form if there's an error

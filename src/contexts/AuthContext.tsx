@@ -26,71 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isSigningOut, setIsSigningOut] = useState(false)
 
-  // Function to clear local storage while preserving auth state
-  const clearLocalStorageExceptAuth = () => {
-    try {
-      console.log('Clearing local storage except auth state...')
-      
-      // Get all Supabase auth-related data to preserve
-      const authKeys: string[] = []
-      const authValues: { [key: string]: string | null } = {}
-      
-      // Also preserve pendingProfile for new user signup flow
-      const pendingProfile = localStorage.getItem('pendingProfile')
-      
-      // Collect all Supabase-related keys
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth'))) {
-          authKeys.push(key)
-          authValues[key] = localStorage.getItem(key)
-        }
-      }
-      
-      console.log('Preserving auth keys:', authKeys)
-      if (pendingProfile) {
-        console.log('Preserving pendingProfile for new user signup flow')
-      }
-      
-      // Clear all local storage
-      localStorage.clear()
-      sessionStorage.clear()
-      
-      // Restore auth-related data
-      authKeys.forEach(key => {
-        if (authValues[key]) {
-          localStorage.setItem(key, authValues[key])
-        }
-      })
-      
-      // Restore pendingProfile if it exists
-      if (pendingProfile) {
-        localStorage.setItem('pendingProfile', pendingProfile)
-      }
-      
-      // Clear non-auth cookies but preserve auth cookies
-      document.cookie.split(";").forEach(function(c) { 
-        const cookieName = c.split("=")[0].trim()
-        // Don't clear Supabase auth cookies
-        if (!cookieName.includes('sb-') && !cookieName.includes('supabase') && !cookieName.includes('auth')) {
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-        }
-      });
-      
-      console.log('Local storage cleared while preserving auth state')
-    } catch (error) {
-      console.warn('Error clearing local storage:', error)
-    }
-  }
-
   useEffect(() => {
-    // Add event listener for page reload
-    const handleBeforeUnload = () => {
-      clearLocalStorageExceptAuth()
-    }
-    
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    
     // Get initial session first (before clearing storage)
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.id)
@@ -100,12 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id)
       }
       setLoading(false)
-      
-      // Only clear storage after we've established the session
-      // This ensures auth tokens are preserved for the session check
-      setTimeout(() => {
-        clearLocalStorageExceptAuth()
-      }, 100)
     })
 
     // Listen for auth changes
@@ -125,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe()
-      window.removeEventListener('beforeunload', handleBeforeUnload)
     }
   }, [])
 
@@ -387,10 +316,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Current profile:', profile?.id)
       console.log('Current session:', session?.user?.id)
       
-      // Clear all localStorage data including auth
-      console.log('Clearing all localStorage including auth...')
-      localStorage.clear()
-      sessionStorage.clear()
+      // Clear app data in localStorage on explicit sign out
+      console.log('Clearing app data from storage (on sign out)...')
+      try {
+        // Remove only our app-specific keys; let Supabase handle its own session cleanup
+        const preserveKeys = new Set<string>()
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (!key) continue
+          if (key.startsWith('sb-') || key.includes('supabase')) {
+            preserveKeys.add(key)
+          }
+        }
+        const toDelete: string[] = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (!key) continue
+          if (!preserveKeys.has(key)) toDelete.push(key)
+        }
+        toDelete.forEach(k => localStorage.removeItem(k))
+        sessionStorage.clear()
+      } catch (e) {
+        console.warn('Selective storage clear failed, falling back to full clear')
+        localStorage.clear()
+        sessionStorage.clear()
+      }
       
       // Clear all state immediately to prevent UI issues
       console.log('Clearing local state immediately...')
@@ -438,10 +388,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // Clear any stored auth data in browser storage
         if (typeof window !== 'undefined') {
-          // Clear localStorage
-          localStorage.clear()
-          // Clear sessionStorage
-          sessionStorage.clear()
+          // Already cleared above
           // Clear any cookies related to auth
           document.cookie.split(";").forEach(function(c) { 
             document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 

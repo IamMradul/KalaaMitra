@@ -15,6 +15,7 @@ type Product = Database['public']['Tables']['products']['Row'] & {
     name: string
     bio: string | null
     profile_image: string | null
+    store_description: string | null
   }
 }
 
@@ -44,7 +45,7 @@ export default function ProductDetail() {
         .from('products')
         .select(`
           *,
-          seller:profiles(name, bio, profile_image)
+          seller:profiles(name, bio, profile_image, store_description)
         `)
         .eq('id', productId)
         .single()
@@ -162,7 +163,7 @@ export default function ProductDetail() {
                 <span className="text-gray-500">(4.8 • 24 reviews)</span>
               </div>
               <p className="text-3xl font-bold text-orange-600">
-                ${product.price}
+                ₹{product.price}
               </p>
             </div>
 
@@ -242,7 +243,7 @@ export default function ProductDetail() {
                     {product.seller?.name}
                   </h4>
                   <p className="text-gray-600 text-sm">
-                    {product.seller?.bio || 'Passionate artisan creating unique pieces'}
+                    {product.seller?.store_description || product.seller?.bio || 'Passionate artisan creating unique pieces'}
                   </p>
                   <Link
                     href={`/stall/${product.seller_id}`}

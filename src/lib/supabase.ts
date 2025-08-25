@@ -16,6 +16,7 @@ export type Database = {
           role: 'buyer' | 'seller'
           bio: string | null
           profile_image: string | null
+          store_description: string | null
           created_at: string
         }
         Insert: {
@@ -25,6 +26,7 @@ export type Database = {
           role: 'buyer' | 'seller'
           bio?: string | null
           profile_image?: string | null
+          store_description?: string | null
           created_at?: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           role?: 'buyer' | 'seller'
           bio?: string | null
           profile_image?: string | null
+          store_description?: string | null
           created_at?: string
         }
       }

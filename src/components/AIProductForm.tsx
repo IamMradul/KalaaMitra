@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Camera, 
@@ -11,7 +11,8 @@ import {
   CheckCircle, 
   AlertCircle,
   Upload,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react'
 import AIService, { AIAnalysisResult } from '@/lib/ai-service'
 import { supabase } from '@/lib/supabase'
@@ -42,7 +43,51 @@ export default function AIProductForm({
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null)
   const [showAiResult, setShowAiResult] = useState(false)
   const [error, setError] = useState('')
+  const [timeoutError, setTimeoutError] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isComponentMounted = useRef(true)
+
+  // Cleanup function to prevent memory leaks and stuck states
+  useEffect(() => {
+    isComponentMounted.current = true
+    
+    return () => {
+      isComponentMounted.current = false
+      // Clear any pending timeouts
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current)
+        uploadTimeoutRef.current = null
+      }
+      // Reset states when component unmounts
+      setIsUploading(false)
+      setIsAnalyzing(false)
+      setError('')
+      setTimeoutError(false)
+    }
+  }, [])
+
+  // Reset form state when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData.imageUrl) {
+      setImageUrl(initialData.imageUrl)
+      setUploadedFile(null)
+    }
+  }, [initialData.imageUrl])
+
+  const resetFormState = () => {
+    if (!isComponentMounted.current) return
+    
+    setIsUploading(false)
+    setIsAnalyzing(false)
+    setError('')
+    setTimeoutError(false)
+    
+    if (uploadTimeoutRef.current) {
+      clearTimeout(uploadTimeoutRef.current)
+      uploadTimeoutRef.current = null
+    }
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -54,6 +99,7 @@ export default function AIProductForm({
       setAiResult(null)
       setShowAiResult(false)
       setError('')
+      setTimeoutError(false)
     }
   }
 
@@ -64,43 +110,71 @@ export default function AIProductForm({
     setAiResult(null)
     setShowAiResult(false)
     setError('')
+    setTimeoutError(false)
   }
 
   const uploadImageToSupabase = async (file: File): Promise<string> => {
-    try {
-      console.log('Starting upload for file:', file.name, 'Size:', file.size)
-      
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `product-images/${fileName}`
+    return new Promise((resolve, reject) => {
+      // Set up 10-second timeout
+      uploadTimeoutRef.current = setTimeout(() => {
+        if (isComponentMounted.current) {
+          setTimeoutError(true)
+          setError('Upload timed out after 10 seconds. Please try refreshing the page and uploading again.')
+          setIsUploading(false)
+        }
+        reject(new Error('Upload timeout after 10 seconds'))
+      }, 10000)
 
-      console.log('Uploading to path:', filePath)
+      const uploadPromise = async () => {
+        try {
+          console.log('Starting upload for file:', file.name, 'Size:', file.size)
+          
+          const fileExt = file.name.split('.').pop()
+          const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+          const filePath = `product-images/${fileName}`
 
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+          console.log('Uploading to path:', filePath)
 
-      if (error) {
-        console.error('Upload error:', error)
-        throw new Error(`Failed to upload image: ${error.message}`)
+          const { data, error } = await supabase.storage
+            .from('images')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            })
+
+          if (error) {
+            console.error('Upload error:', error)
+            throw new Error(`Failed to upload image: ${error.message}`)
+          }
+
+          console.log('Upload successful, getting public URL...')
+
+          // Get the public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('images')
+            .getPublicUrl(filePath)
+
+          console.log('Public URL generated:', publicUrl)
+          
+          // Clear timeout since upload succeeded
+          if (uploadTimeoutRef.current) {
+            clearTimeout(uploadTimeoutRef.current)
+            uploadTimeoutRef.current = null
+          }
+          
+          resolve(publicUrl)
+        } catch (error) {
+          // Clear timeout since we're handling the error
+          if (uploadTimeoutRef.current) {
+            clearTimeout(uploadTimeoutRef.current)
+            uploadTimeoutRef.current = null
+          }
+          reject(error)
+        }
       }
 
-      console.log('Upload successful, getting public URL...')
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath)
-
-      console.log('Public URL generated:', publicUrl)
-      return publicUrl
-    } catch (error) {
-      console.error('Error in uploadImageToSupabase:', error)
-      throw error
-    }
+      uploadPromise()
+    })
   }
 
   const analyzeImage = async () => {
@@ -109,8 +183,11 @@ export default function AIProductForm({
       return
     }
 
+    if (!isComponentMounted.current) return
+
     setIsAnalyzing(true)
     setError('')
+    setTimeoutError(false)
 
     try {
       const aiService = AIService.getInstance()
@@ -118,18 +195,26 @@ export default function AIProductForm({
       // If we have an uploaded file, use it directly for AI analysis
       if (uploadedFile) {
         const result = await aiService.analyzeProductImageFromFile(uploadedFile)
-        setAiResult(result)
-        setShowAiResult(true)
+        if (isComponentMounted.current) {
+          setAiResult(result)
+          setShowAiResult(true)
+        }
       } else {
         // Use the URL for AI analysis
         const result = await aiService.analyzeProductImage(imageUrl)
-        setAiResult(result)
-        setShowAiResult(true)
+        if (isComponentMounted.current) {
+          setAiResult(result)
+          setShowAiResult(true)
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze image')
+      if (isComponentMounted.current) {
+        setError(err instanceof Error ? err.message : 'Failed to analyze image')
+      }
     } finally {
-      setIsAnalyzing(false)
+      if (isComponentMounted.current) {
+        setIsAnalyzing(false)
+      }
     }
   }
 
@@ -142,16 +227,16 @@ export default function AIProductForm({
     const descriptionInput = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement
     const priceInput = document.querySelector('input[name="price"]') as HTMLInputElement
 
-    if (titleInput && !titleInput.value) {
-      titleInput.value = `Beautiful ${aiResult.category}`
+    if (titleInput) {
+      titleInput.value = aiResult.title
     }
-    if (categoryInput && !categoryInput.value) {
+    if (categoryInput) {
       categoryInput.value = aiResult.category
     }
-    if (descriptionInput && !descriptionInput.value) {
+    if (descriptionInput) {
       descriptionInput.value = aiResult.description
     }
-    if (priceInput && !priceInput.value) {
+    if (priceInput) {
       // Use the middle of the price range
       const suggestedPrice = (aiResult.pricingSuggestion.minPrice + aiResult.pricingSuggestion.maxPrice) / 2
       priceInput.value = suggestedPrice.toFixed(2)
@@ -160,8 +245,12 @@ export default function AIProductForm({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    
+    if (!isComponentMounted.current) return
+    
     setIsUploading(true)
     setError('')
+    setTimeoutError(false)
 
     try {
       const formData = new FormData(e.currentTarget)
@@ -182,17 +271,32 @@ export default function AIProductForm({
         return
       }
 
+      if (!isComponentMounted.current) return
+
       console.log('Calling onSubmit with formData...')
       await onSubmit(formData)
       console.log('onSubmit completed successfully')
       
       // Close the form after successful submission
-      onCancel()
+      if (isComponentMounted.current) {
+        onCancel()
+      }
     } catch (err) {
+      if (!isComponentMounted.current) return
+      
       console.error('Error in handleSubmit:', err)
-      setError(err instanceof Error ? err.message : 'Failed to upload image')
+      if (timeoutError) {
+        setError('Upload timed out. Please try refreshing the page and uploading again.')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to upload image')
+      }
       setIsUploading(false)
     }
+  }
+
+  const handleCancel = () => {
+    resetFormState()
+    onCancel()
   }
 
   return (
@@ -208,7 +312,7 @@ export default function AIProductForm({
             AI-Powered Product Creation
           </h3>
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-6 h-6" />
@@ -288,6 +392,7 @@ export default function AIProductForm({
                     AI Analysis Results
                   </h4>
                   <button
+                    type="button"
                     onClick={applyAIResults}
                     className="flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
                   >
@@ -300,8 +405,9 @@ export default function AIProductForm({
                   <div>
                     <h5 className="font-medium text-blue-700 mb-2 flex items-center">
                       <Tag className="w-4 h-4 mr-1" />
-                      Category & Tags
+                      Suggested Title & Category
                     </h5>
+                    <p className="text-blue-800 mb-1"><strong>Title:</strong> {aiResult.title}</p>
                     <p className="text-blue-800 mb-1"><strong>Category:</strong> {aiResult.category}</p>
                     <div className="flex flex-wrap gap-1">
                       {aiResult.tags.map((tag, index) => (
@@ -321,7 +427,7 @@ export default function AIProductForm({
                       Pricing Suggestion
                     </h5>
                     <p className="text-blue-800 mb-1">
-                      <strong>Range:</strong> ${aiResult.pricingSuggestion.minPrice} - ${aiResult.pricingSuggestion.maxPrice}
+                      <strong>Range:</strong> ₹{aiResult.pricingSuggestion.minPrice} - ₹{aiResult.pricingSuggestion.maxPrice}
                     </p>
                     <p className="text-blue-700 text-sm">{aiResult.pricingSuggestion.reasoning}</p>
                   </div>
@@ -339,7 +445,15 @@ export default function AIProductForm({
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
               <AlertCircle className="h-5 w-5 mr-2" />
-              {error}
+              <div className="flex-1">
+                {error}
+                {timeoutError && (
+                  <div className="mt-2 flex items-center text-xs">
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Try refreshing the page and uploading again
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -387,7 +501,7 @@ export default function AIProductForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price ($) *
+              Price (₹) *
             </label>
             <input
               name="price"
@@ -405,7 +519,7 @@ export default function AIProductForm({
           <div className="flex space-x-3 pt-4">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={handleCancel}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel

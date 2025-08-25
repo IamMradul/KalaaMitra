@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
 
 export interface AIAnalysisResult {
+  title: string;
   description: string;
   pricingSuggestion: {
     minPrice: number;
@@ -63,6 +64,37 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
   }
 
   /**
+   * Generate a compelling store description for an artisan
+   */
+  async generateStoreDescription(sellerName: string, bio: string, products: { title: string; category: string }[]): Promise<string> {
+    try {
+      const prompt = `
+        Create a compelling store description for an artisan marketplace stall. This should be engaging, authentic, and highlight the seller's unique story and craftsmanship.
+
+        Seller Name: ${sellerName}
+        Bio: ${bio || 'Passionate artisan'}
+        Products: ${products.map(p => `${p.title} (${p.category})`).join(', ')}
+
+        Requirements:
+        - 2-3 sentences maximum
+        - Highlight craftsmanship and cultural significance
+        - Mention the types of products they create
+        - Include a personal touch
+        - Make it warm and inviting
+        - Focus on quality and tradition
+
+        Return only the description text, no additional formatting.
+      `;
+
+      const result = await this.model.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (error) {
+      console.error('Store description generation failed:', error);
+      throw new Error('Failed to generate store description. Please try again.');
+    }
+  }
+
+  /**
    * Analyze an image from a File object and generate product description and pricing
    */
   async analyzeProductImageFromFile(file: File): Promise<AIAnalysisResult> {
@@ -74,12 +106,13 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
       const prompt = `
         Analyze this image of an artisanal product and provide ONLY a JSON response with no additional text, markdown, or formatting.
         
-        Return exactly this JSON structure:
+        Return exactly this JSON structure (all prices in INR - Indian Rupees, ₹):
         {
+          "title": "unique descriptive title here",
           "description": "detailed description here",
           "pricingSuggestion": {
-            "minPrice": 50,
-            "maxPrice": 150,
+            "minPrice": 500,
+            "maxPrice": 1500,
             "reasoning": "pricing reasoning here"
           },
           "category": "category name",
@@ -87,24 +120,34 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
         }
         
         Requirements:
-        1. A detailed, engaging product description (2-3 sentences) that highlights:
+        1. A unique, descriptive product title (3-6 words) that captures:
+           - The specific type/style of the item
+           - Key visual characteristics
+           - Cultural or regional elements if present
+           - Avoid generic words like "Beautiful" or "Amazing"
+           - Be specific and memorable
+        
+        2. A detailed, engaging product description (2-3 sentences) that highlights:
            - Materials used
            - Craftsmanship quality
            - Cultural significance
            - Unique features
         
-        2. A pricing suggestion with reasoning based on:
+        3. A pricing suggestion in Indian Rupees (₹) with reasoning based on:
            - Materials quality
            - Craftsmanship complexity
            - Market value for similar items
            - Cultural significance
            - Uniqueness
         
-        3. Product category (e.g., Pottery, Textiles, Jewelry, Woodwork, Metalwork)
+        4. Product category (e.g., Pottery, Textiles, Jewelry, Woodwork, Metalwork)
         
-        4. Relevant tags for searchability
+        5. Relevant tags for searchability
         
-        IMPORTANT: Return ONLY the JSON object, no markdown, no code blocks, no additional text.
+        IMPORTANT:
+        - Currency must be INR (₹) suitable for Indian online marketplace buyers
+        - Use realistic rupee values (do not output dollars)
+        - Return ONLY the JSON object, no markdown, no code blocks, no additional text.
         Focus on helping artisans understand the true value of their work and avoid underpricing.
       `;
 
@@ -152,12 +195,13 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
       }
       
       // Validate the response structure
-      if (!aiResult.description || !aiResult.pricingSuggestion || !aiResult.category || !aiResult.tags) {
+      if (!aiResult.title || !aiResult.description || !aiResult.pricingSuggestion || !aiResult.category || !aiResult.tags) {
         console.error('Invalid AI response structure:', aiResult);
         throw new Error('AI response is incomplete. Please try again.');
       }
       
       return {
+        title: aiResult.title,
         description: aiResult.description,
         pricingSuggestion: {
           minPrice: parseFloat(aiResult.pricingSuggestion.minPrice),
@@ -192,12 +236,13 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
       const prompt = `
         Analyze this image of an artisanal product and provide ONLY a JSON response with no additional text, markdown, or formatting.
         
-        Return exactly this JSON structure:
+        Return exactly this JSON structure (all prices in INR - Indian Rupees, ₹):
         {
+          "title": "unique descriptive title here",
           "description": "detailed description here",
           "pricingSuggestion": {
-            "minPrice": 50,
-            "maxPrice": 150,
+            "minPrice": 500,
+            "maxPrice": 1500,
             "reasoning": "pricing reasoning here"
           },
           "category": "category name",
@@ -205,24 +250,34 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
         }
         
         Requirements:
-        1. A detailed, engaging product description (2-3 sentences) that highlights:
+        1. A unique, descriptive product title (3-6 words) that captures:
+           - The specific type/style of the item
+           - Key visual characteristics
+           - Cultural or regional elements if present
+           - Avoid generic words like "Beautiful" or "Amazing"
+           - Be specific and memorable
+        
+        2. A detailed, engaging product description (2-3 sentences) that highlights:
            - Materials used
            - Craftsmanship quality
            - Cultural significance
            - Unique features
         
-        2. A pricing suggestion with reasoning based on:
+        3. A pricing suggestion in Indian Rupees (₹) with reasoning based on:
            - Materials quality
            - Craftsmanship complexity
            - Market value for similar items
            - Cultural significance
            - Uniqueness
         
-        3. Product category (e.g., Pottery, Textiles, Jewelry, Woodwork, Metalwork)
+        4. Product category (e.g., Pottery, Textiles, Jewelry, Woodwork, Metalwork)
         
-        4. Relevant tags for searchability
+        5. Relevant tags for searchability
         
-        IMPORTANT: Return ONLY the JSON object, no markdown, no code blocks, no additional text.
+        IMPORTANT:
+        - Currency must be INR (₹) suitable for Indian online marketplace buyers
+        - Use realistic rupee values (do not output dollars)
+        - Return ONLY the JSON object, no markdown, no code blocks, no additional text.
         Focus on helping artisans understand the true value of their work and avoid underpricing.
       `;
 
@@ -270,12 +325,13 @@ Answer as a pragmatic marketplace strategist. Give specific, short recommendatio
       }
       
       // Validate the response structure
-      if (!aiResult.description || !aiResult.pricingSuggestion || !aiResult.category || !aiResult.tags) {
+      if (!aiResult.title || !aiResult.description || !aiResult.pricingSuggestion || !aiResult.category || !aiResult.tags) {
         console.error('Invalid AI response structure:', aiResult);
         throw new Error('AI response is incomplete. Please try again.');
       }
       
       return {
+        title: aiResult.title,
         description: aiResult.description,
         pricingSuggestion: {
           minPrice: parseFloat(aiResult.pricingSuggestion.minPrice),

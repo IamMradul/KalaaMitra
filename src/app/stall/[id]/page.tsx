@@ -131,7 +131,13 @@ export default function StallPage() {
             {stallProfile.name}&apos;s Stall
           </h1>
           
-          {stallProfile.bio && (
+          {stallProfile.store_description && (
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+              {stallProfile.store_description}
+            </p>
+          )}
+          
+          {!stallProfile.store_description && stallProfile.bio && (
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
               {stallProfile.bio}
             </p>
@@ -204,7 +210,7 @@ export default function StallPage() {
                     </Link>
                     
                     <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-                    <p className="text-lg font-bold text-orange-600">${product.price}</p>
+                    <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
                   </div>
                 </motion.div>
               ))}
@@ -224,7 +230,7 @@ export default function StallPage() {
           </h3>
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-gray-600 leading-relaxed mb-6">
-              {stallProfile.bio || 
+              {stallProfile.store_description || stallProfile.bio || 
                 `${stallProfile.name} is a passionate artisan dedicated to creating unique, handcrafted pieces that celebrate tradition and craftsmanship. Each creation is made with care and attention to detail, ensuring that every piece tells a story and brings beauty to your life.`
               }
             </p>

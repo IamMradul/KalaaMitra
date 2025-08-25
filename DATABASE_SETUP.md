@@ -15,8 +15,12 @@ CREATE TABLE profiles (
   role TEXT CHECK (role IN ('buyer', 'seller')) NOT NULL,
   bio TEXT,
   profile_image TEXT,
+  store_description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- If you already have the profiles table, add the store_description column:
+-- ALTER TABLE profiles ADD COLUMN store_description TEXT;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

@@ -382,7 +382,7 @@ export default function Marketplace() {
                     <p className="text-xs text-gray-500 mb-3">by {product.seller?.name || 'Unknown Artisan'}</p>
                     
                     <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold text-orange-600">${product.price}</p>
+                      <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
                       <div className="flex space-x-2">
                         <button
                           onClick={() => addToCart(product.id)}
@@ -458,7 +458,7 @@ export default function Marketplace() {
                       </h3>
                     </Link>
                     <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-                    <p className="text-lg font-bold text-orange-600">${product.price}</p>
+                    <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
                   </div>
                 </motion.div>
               ))}
