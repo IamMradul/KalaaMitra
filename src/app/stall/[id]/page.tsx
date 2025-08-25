@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/contexts/AuthContext'
+import { logActivity } from '@/lib/activity'
 import { ArrowLeft, User, Palette, MapPin, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
@@ -13,6 +15,7 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 
 export default function StallPage() {
   const params = useParams()
+  const { user } = useAuth()
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +25,12 @@ export default function StallPage() {
       fetchStallData(params.id as string)
     }
   }, [params.id])
+
+  useEffect(() => {
+    if (user && params.id) {
+      logActivity({ userId: user.id, activityType: 'stall_view', stallId: params.id as string })
+    }
+  }, [user, params.id])
 
   const fetchStallData = async (stallId: string) => {
     try {

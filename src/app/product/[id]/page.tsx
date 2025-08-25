@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/contexts/AuthContext'
+import { logActivity } from '@/lib/activity'
 import { ShoppingCart, Heart, ArrowLeft, Star, User } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
@@ -19,6 +21,7 @@ type Product = Database['public']['Tables']['products']['Row'] & {
 export default function ProductDetail() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
@@ -28,6 +31,12 @@ export default function ProductDetail() {
       fetchProduct(params.id as string)
     }
   }, [params.id])
+
+  useEffect(() => {
+    if (user && product?.id) {
+      logActivity({ userId: user.id, activityType: 'view', productId: product.id })
+    }
+  }, [user, product?.id])
 
   const fetchProduct = async (productId: string) => {
     try {

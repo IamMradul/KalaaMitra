@@ -8,7 +8,9 @@ import { motion } from 'framer-motion'
 import { Plus, Edit, Trash2, Eye, Camera, Palette, LogOut, Sparkles } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
+import { extractImageFeatures } from '@/lib/image-similarity'
 import AIProductForm from '@/components/AIProductForm'
+import SellerAnalytics from './SellerAnalytics'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -103,13 +105,7 @@ export default function SellerDashboard() {
     }
   }, [user, profile, loading, router, dbStatus])
 
-  // Separate effect to handle product fetching when navigating back
-  useEffect(() => {
-    if (user && profile?.role === 'seller' && !productsLoading && products.length === 0) {
-      console.log('User navigated back, fetching products...')
-      fetchProducts()
-    }
-  }, [user, profile, productsLoading, products.length])
+  // Remove the problematic useEffect that causes infinite loops
 
   const fetchProducts = async () => {
     if (!user) return
@@ -145,6 +141,12 @@ export default function SellerDashboard() {
       return
     }
 
+    // Prevent multiple simultaneous operations
+    if (addProductLoading) {
+      console.log('Add product operation already in progress, skipping...')
+      return
+    }
+
     setAddProductLoading(true)
     
     const formData = new FormData(e.currentTarget)
@@ -166,24 +168,29 @@ export default function SellerDashboard() {
       console.log('User ID:', user.id)
       console.log('User email:', user.email)
       console.log('Profile role:', profile?.role)
+      console.log('User authenticated:', !!user)
+      console.log('Profile exists:', !!profile)
       console.log('Product data:', { title, category, description, price, imageUrl })
       
-      // First, let's check if the products table exists and we can access it
-      console.log('Testing products table access...')
-      const { error: testError } = await supabase
-        .from('products')
-        .select('count')
-        .limit(1)
-      
-      if (testError) {
-        console.error('Products table access error:', testError)
-        alert(`Database error: ${testError.message}. Please check if the products table exists.`)
-        return
+      // Extract image features (best-effort)
+      let features: { avgColor: { r: number; g: number; b: number }; aHash: string } | null = null
+      if (imageUrl) {
+        try {
+          features = await extractImageFeatures(imageUrl)
+        } catch {}
       }
+      console.log('Proceeding with insert...')
+      console.log('Insert data:', {
+        seller_id: user.id,
+        title,
+        category,
+        description,
+        price,
+        image_url: imageUrl || null,
+      })
       
-      console.log('Products table accessible, proceeding with insert...')
-      
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const insertPromise = supabase
         .from('products')
         .insert([
           {
@@ -193,9 +200,20 @@ export default function SellerDashboard() {
             description,
             price,
             image_url: imageUrl || null,
+            // New optional columns if present in DB
+            image_avg_r: features?.avgColor.r ?? null,
+            image_avg_g: features?.avgColor.g ?? null,
+            image_avg_b: features?.avgColor.b ?? null,
+            image_ahash: features?.aHash ?? null,
           },
         ])
         .select()
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database insert timeout after 10 seconds')), 10000)
+      })
+      
+      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any
 
       if (error) {
         console.error('Error adding product:', error)
@@ -222,10 +240,14 @@ export default function SellerDashboard() {
       console.log('Product added successfully:', data)
       alert('Product added successfully!')
       
+      // Reset form safely before closing modal
+      const formElement = (e.currentTarget as HTMLFormElement | null)
+      if (formElement && typeof formElement.reset === 'function') {
+        formElement.reset()
+      }
+      
       setShowAddProduct(false)
       fetchProducts()
-      // Reset form
-      e.currentTarget.reset()
     } catch (error) {
       console.error('Error adding product:', error)
       if (error instanceof Error) {
@@ -415,6 +437,17 @@ export default function SellerDashboard() {
               </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Analytics Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
+        >
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Stall Analytics (last 30 days)</h2>
+          <SellerAnalytics sellerId={user.id} />
         </motion.div>
 
         {/* Products Section */}

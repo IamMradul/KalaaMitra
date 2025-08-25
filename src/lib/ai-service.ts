@@ -14,6 +14,12 @@ export interface AIAnalysisResult {
   tags: string[];
 }
 
+export interface SellerAnalyticsSnapshot {
+  totalViews: number;
+  uniqueVisitors: number;
+  topProducts: { title: string; views: number }[];
+}
+
 export class AIService {
   private static instance: AIService;
   private model: ReturnType<typeof genAI.getGenerativeModel>;
@@ -27,6 +33,33 @@ export class AIService {
       AIService.instance = new AIService();
     }
     return AIService.instance;
+  }
+
+  /**
+   * Generate concise seller tips from analytics
+   */
+  async generateSellerTips(snapshot: SellerAnalyticsSnapshot): Promise<string> {
+    const prompt = `You are a marketplace growth coach. Based on this 30-day snapshot, write 4-6 concise, actionable tips. Use short bullets with verbs. Avoid fluff.
+
+Snapshot (JSON): ${JSON.stringify(snapshot)}
+
+Return plain text with bullets. Keep under 1200 characters.`
+    const result = await this.model.generateContent(prompt)
+    return result.response.text().trim()
+  }
+
+  /**
+   * Answer a seller's follow-up question using analytics context
+   */
+  async answerSellerQuestion(snapshot: SellerAnalyticsSnapshot, question: string): Promise<string> {
+    const prompt = `Context:
+${JSON.stringify(snapshot, null, 2)}
+
+Question: ${question}
+
+Answer as a pragmatic marketplace strategist. Give specific, short recommendations. Use bullets if helpful. Keep it under 800 characters.`
+    const result = await this.model.generateContent(prompt)
+    return result.response.text().trim()
   }
 
   /**

@@ -48,6 +48,11 @@ CREATE TABLE products (
   description TEXT NOT NULL,
   price DECIMAL(10,2) NOT NULL,
   image_url TEXT,
+  -- Optional image features for similarity
+  image_avg_r INTEGER,
+  image_avg_g INTEGER,
+  image_avg_b INTEGER,
+  image_ahash TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -69,6 +74,60 @@ CREATE POLICY "Sellers can delete their own products" ON products
 ```
 
 ### 3. Cart Table
+### 4. User Activity Table (for recommendations)
+
+```sql
+-- Create user_activity table
+CREATE TABLE IF NOT EXISTS user_activity (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  activity_type TEXT CHECK (activity_type IN ('view','search','add_to_cart','purchase','stall_view')) NOT NULL,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+  stall_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  query TEXT,
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- If the table already exists without 'stall_view', run this migration:
+-- DROP the old check and add the new one
+-- NOTE: Confirm the actual constraint name in Table Editor; it may differ.
+-- Example:
+-- ALTER TABLE user_activity DROP CONSTRAINT IF EXISTS user_activity_activity_type_check;
+-- ALTER TABLE user_activity
+--   ADD CONSTRAINT user_activity_activity_type_check
+--   CHECK (activity_type IN ('view','search','add_to_cart','purchase','stall_view'));
+
+-- Enable RLS
+ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
+
+-- Policies: users can insert their own activity; users can read only their activity
+CREATE POLICY "Insert own activity" ON user_activity
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Read own activity" ON user_activity
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Allow stall owners to read activity related to their stall and products
+-- (Run these if you want sellers to see analytics for visitors)
+CREATE POLICY IF NOT EXISTS "Sellers can read stall activity" ON user_activity
+  FOR SELECT
+  USING (stall_id = auth.uid());
+
+CREATE POLICY IF NOT EXISTS "Sellers can read product activity" ON user_activity
+  FOR SELECT
+  USING (
+    product_id IS NOT NULL AND
+    product_id IN (
+      SELECT id FROM products WHERE seller_id = auth.uid()
+    )
+  );
+
+-- Optional helpful index
+CREATE INDEX IF NOT EXISTS idx_user_activity_user_time ON user_activity(user_id, timestamp DESC);
+```
+
 
 ```sql
 -- Create the cart table
