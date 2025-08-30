@@ -5,49 +5,42 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative section-padding overflow-hidden">
+      <section className="relative section-padding overflow-hidden heritage-bg">
         {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-orange-300 to-red-300 rounded-full mix-blend-multiply filter blur-3xl floating-element"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-amber-300 to-orange-300 rounded-full mix-blend-multiply filter blur-3xl floating-element"></div>
-          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-gradient-to-br from-red-300 to-pink-300 rounded-full mix-blend-multiply filter blur-3xl floating-element"></div>
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          {/* Mandala SVG or pattern can be placed here if available */}
         </div>
-
         <div className="container-custom relative">
           <div className="text-center max-w-5xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center px-6 py-3 glass-card rounded-full border border-orange-200/50 shadow-soft mb-12 animate-slide-in-up">
-              <Zap className="w-5 h-5 text-orange-500 mr-3" />
-              <span className="text-sm font-medium text-gray-700">AI-Powered Artisan Marketplace</span>
+            <div className="inline-flex items-center px-6 py-3 heritage-card rounded-full border border-heritage-gold/40 shadow-soft mb-12 animate-slide-in-up">
+              <Zap className="w-5 h-5 text-[var(--heritage-gold)] mr-3" />
+              <span className="text-sm font-medium text-[var(--heritage-brown)]">AI-Powered Artisan Marketplace</span>
             </div>
-
             {/* Main Title */}
-            <h1 className="text-6xl md:text-8xl font-bold text-gray-900 mb-8 leading-tight animate-slide-in-up animate-delay-100">
+            <h1 className="text-6xl md:text-8xl font-bold heritage-title mb-8 leading-tight animate-slide-in-up animate-delay-100">
               Welcome to{' '}
-              <span className="gradient-text-animated">
+              <span className="heritage-title">
                 KalaMitra
               </span>
             </h1>
-            
             {/* Subtitle */}
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg text-[var(--heritage-brown)] mb-8">
               Discover unique handcrafted treasures from talented artisans. Every piece tells a story.
             </p>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg text-[var(--heritage-brown)] mb-8">
               From traditional crafts to modern designs, find pieces that speak to your soul.
             </p>
-
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-8 justify-center mb-20 animate-slide-in-up animate-delay-300">
-              <Link href="/auth/signup?role=seller" className="btn-primary group">
+              <Link href="/auth/signup?role=seller" className="btn-heritage group">
                 <span className="flex items-center justify-center space-x-3">
                   <Palette className="w-6 h-6" />
                   <span>Join as Artisan</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Link>
-
-              <Link href="/marketplace" className="btn-secondary group">
+              <Link href="/marketplace" className="btn-heritage group">
                 <span className="flex items-center justify-center space-x-3">
                   <ShoppingBag className="w-6 h-6" />
                   <span>Explore Marketplace</span>

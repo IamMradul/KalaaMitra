@@ -29,13 +29,28 @@ export default function SellerDashboard() {
   const [dbStatus, setDbStatus] = useState<string>('Unknown')
   const [isTestingDb, setIsTestingDb] = useState(false)
   const hasInitialized = useRef(false)
+  const dbTestedRef = useRef(false)
+  const productsFetchedRef = useRef(false)
 
   const testDatabaseConnection = async () => {
     // Prevent multiple simultaneous database tests
-    if (isTestingDb || dbStatus !== 'Unknown') {
+    if (isTestingDb || dbStatus !== 'Unknown' || dbTestedRef.current) {
       console.log('Database test already in progress or completed, skipping...')
       return
     }
+
+    // If we have a stored session and a previous successful DB test for this user, skip retesting
+    try {
+      const storedSessionRaw = localStorage.getItem('km_session_json')
+      const testedUserId = localStorage.getItem('km_db_test_user')
+      const testedDone = localStorage.getItem('km_db_test_done')
+      if (storedSessionRaw && testedDone === 'true' && testedUserId && user?.id && testedUserId === user.id) {
+        console.log('Skipping DB test: found prior success for this user in localStorage')
+        dbTestedRef.current = true
+        setDbStatus(localStorage.getItem('km_db_status') || 'Connected - All tables accessible')
+        return
+      }
+    } catch {}
 
     setIsTestingDb(true)
     try {
@@ -67,9 +82,27 @@ export default function SellerDashboard() {
       
       console.log('Database connection successful')
       setDbStatus('Connected - All tables accessible')
+      dbTestedRef.current = true
+      try {
+        if (user?.id) {
+          localStorage.setItem('km_db_test_user', user.id)
+          localStorage.setItem('km_db_test_done', 'true')
+          localStorage.setItem('km_db_status', 'Connected - All tables accessible')
+          localStorage.setItem('km_db_tested_at', Date.now().toString())
+        }
+      } catch {}
     } catch (error) {
       console.error('Database connection test failed:', error)
       setDbStatus(`Connection failed: ${error}`)
+      dbTestedRef.current = true
+      try {
+        if (user?.id) {
+          localStorage.setItem('km_db_test_user', user.id)
+          localStorage.setItem('km_db_test_done', 'true')
+          localStorage.setItem('km_db_status', `Connection failed`)
+          localStorage.setItem('km_db_tested_at', Date.now().toString())
+        }
+      } catch {}
     } finally {
       setIsTestingDb(false)
     }
@@ -78,7 +111,7 @@ export default function SellerDashboard() {
   useEffect(() => {
     console.log('Dashboard useEffect - loading:', loading, 'user:', !!user, 'profile:', !!profile)
     
-    if (!loading && !hasInitialized.current) {
+    if (!loading) {
       if (!user) {
         console.log('No user, redirecting to signin')
         router.push('/auth/signin')
@@ -88,12 +121,18 @@ export default function SellerDashboard() {
       } else {
         console.log('User is seller, fetching products and setting stall profile')
         setStallProfile(profile)
-        fetchProducts()
-        // Only test database connection once when component mounts
-        if (dbStatus === 'Unknown') {
-          testDatabaseConnection()
+        // Only fetch products if not already fetched
+        if (!productsFetchedRef.current) {
+          fetchProducts()
+        } else {
+          console.log('Products already fetched, skipping...')
         }
-        hasInitialized.current = true
+        
+        // Only test database connection once per session/user
+        if (!hasInitialized.current && dbStatus === 'Unknown' && !dbTestedRef.current) {
+          testDatabaseConnection()
+          hasInitialized.current = true
+        }
       }
     }
 
@@ -109,15 +148,71 @@ export default function SellerDashboard() {
 
   const fetchProducts = async () => {
     if (!user) return
+    
+    // Prevent multiple simultaneous executions
+    if (productsLoading) {
+      console.log('Products fetch already in progress, skipping...')
+      return
+    }
 
     setProductsLoading(true)
     try {
       console.log('Fetching products for user:', user.id)
-      const { data, error } = await supabase
+      
+      // Test basic Supabase connection first
+      console.log('Testing basic Supabase connection...')
+      try {
+        const { data: testData, error: testError } = await supabase
+          .from('products')
+          .select('count')
+          .limit(1)
+        
+        if (testError) {
+          console.error('Basic connection test failed:', testError)
+          throw testError
+        }
+        console.log('Basic connection test successful')
+      } catch (testErr) {
+        console.error('Basic connection test error:', testErr)
+        throw testErr
+      }
+      
+      // Test simple query without user filter first
+      console.log('Testing simple products query...')
+      try {
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('products')
+          .select('id, title')
+          .limit(5)
+        
+        if (simpleError) {
+          console.error('Simple query failed:', simpleError)
+          throw simpleError
+        }
+        console.log('Simple query successful, found:', simpleData?.length || 0, 'products')
+      } catch (simpleErr) {
+        console.error('Simple query error:', simpleErr)
+        throw simpleErr
+      }
+      
+      // Now try the actual user-specific query
+      console.log('Testing user-specific query...')
+      const fetchPromise = supabase
         .from('products')
         .select('*')
         .eq('seller_id', user.id)
         .order('created_at', { ascending: false })
+      
+      console.log('Supabase query created, awaiting response...')
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Products fetch timeout after 10 seconds')), 10000)
+      })
+      
+      console.log('Starting race between fetch and timeout...')
+      const raced = await Promise.race([fetchPromise, timeoutPromise])
+      console.log('Race completed, processing result...')
+      const { data, error } = raced as { data: Product[] | null; error: { message: string; details?: string; hint?: string; code?: string } | null }
 
       if (error) {
         console.error('Error fetching products:', error)
@@ -126,9 +221,11 @@ export default function SellerDashboard() {
       
       console.log('Products fetched successfully:', data?.length || 0, 'products')
       setProducts(data || [])
+      productsFetchedRef.current = true
     } catch (error) {
       console.error('Error fetching products:', error)
       setProducts([])
+      productsFetchedRef.current = true
     } finally {
       setProductsLoading(false)
     }

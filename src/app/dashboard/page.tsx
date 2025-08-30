@@ -36,14 +36,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center heritage-bg">
       <div className="text-center">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full mx-auto mb-4"
+          className="w-12 h-12 border-4 border-heritage-gold border-t-heritage-red rounded-full mx-auto mb-4"
         />
-        <p className="text-gray-600">Redirecting...</p>
+        <p className="text-[var(--heritage-brown)] heritage-title">Redirecting...</p>
       </div>
     </div>
   )

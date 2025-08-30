@@ -117,7 +117,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 py-8">
+    <div className="min-h-screen heritage-bg py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -129,16 +129,16 @@ export default function CartPage() {
           <div className="flex items-center space-x-4 mb-4">
             <Link
               href="/marketplace"
-              className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium"
+              className="inline-flex items-center text-[var(--heritage-gold)] hover:text-[var(--heritage-red)] font-medium"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Marketplace
             </Link>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold heritage-title mb-2">
             Shopping Cart
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--heritage-brown)]">
             Review your selected items
           </p>
         </motion.div>

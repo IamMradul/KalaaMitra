@@ -11,7 +11,8 @@ import {
   CheckCircle, 
   AlertCircle,
   Upload,
-  X
+  X,
+  Video
 } from 'lucide-react'
 import AIService, { AIAnalysisResult } from '@/lib/ai-service'
 import { supabase } from '@/lib/supabase'
@@ -39,31 +40,34 @@ export default function AIProductForm({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isGeneratingAd, setIsGeneratingAd] = useState(false)
   const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null)
   const [showAiResult, setShowAiResult] = useState(false)
   const [error, setError] = useState('')
+  const [adVideoUrl, setAdVideoUrl] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Create a temporary URL for preview
       const url = URL.createObjectURL(file)
       setImageUrl(url)
       setUploadedFile(file)
       setAiResult(null)
       setShowAiResult(false)
       setError('')
+      setAdVideoUrl('')
     }
   }
 
   const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value
     setImageUrl(url)
-    setUploadedFile(null) // Clear uploaded file when using URL
+    setUploadedFile(null)
     setAiResult(null)
     setShowAiResult(false)
     setError('')
+    setAdVideoUrl('')
   }
 
   const uploadImageToSupabase = async (file: File): Promise<string> => {
@@ -71,13 +75,13 @@ export default function AIProductForm({
       console.log('Starting upload for file:', file.name, 'Size:', file.size)
       
       const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `product-images/${fileName}`
+      const fileName = `product-images/${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = fileName
 
       console.log('Uploading to path:', filePath)
 
       const { data, error } = await supabase.storage
-        .from('images')
+        .from('videos')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -90,9 +94,8 @@ export default function AIProductForm({
 
       console.log('Upload successful, getting public URL...')
 
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('images')
+        .from('videos')
         .getPublicUrl(filePath)
 
       console.log('Public URL generated:', publicUrl)
@@ -115,13 +118,11 @@ export default function AIProductForm({
     try {
       const aiService = AIService.getInstance()
       
-      // If we have an uploaded file, use it directly for AI analysis
       if (uploadedFile) {
         const result = await aiService.analyzeProductImageFromFile(uploadedFile)
         setAiResult(result)
         setShowAiResult(true)
       } else {
-        // Use the URL for AI analysis
         const result = await aiService.analyzeProductImage(imageUrl)
         setAiResult(result)
         setShowAiResult(true)
@@ -133,10 +134,55 @@ export default function AIProductForm({
     }
   }
 
+  const generateAd = async () => {
+    if (!imageUrl || !aiResult) {
+      setError('Please analyze an image first')
+      return
+    }
+
+    setIsGeneratingAd(true)
+    setError('')
+
+    try {
+      const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement
+      const descriptionInput = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement
+      const priceInput = document.querySelector('input[name="price"]') as HTMLInputElement
+
+      const adPrompt = `Create a vibrant promotional video ad showcasing an artisan product with the following details:
+      Title: ${titleInput?.value || aiResult.title}
+      Description: ${descriptionInput?.value || aiResult.description}
+      Price: ₹${priceInput?.value || ((aiResult.pricingSuggestion.minPrice + aiResult.pricingSuggestion.maxPrice) / 2).toFixed(2)}
+      Style: Dynamic panning shots with vibrant colors, highlighting the product's unique craftsmanship and cultural significance.`;
+
+      const imageData = uploadedFile ? await uploadImageToSupabase(uploadedFile) : imageUrl
+
+      const response = await fetch('/api/generate-ad', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: imageData,
+          prompt: adPrompt
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate ad')
+      }
+
+      const { videoUrl } = await response.json()
+      setAdVideoUrl(videoUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate ad')
+    } finally {
+      setIsGeneratingAd(false)
+    }
+  }
+
   const applyAIResults = () => {
     if (!aiResult) return
 
-    // Update form fields with AI results
     const titleInput = document.querySelector('input[name="title"]') as HTMLInputElement
     const categoryInput = document.querySelector('input[name="category"]') as HTMLInputElement
     const descriptionInput = document.querySelector('textarea[name="description"]') as HTMLTextAreaElement
@@ -152,7 +198,6 @@ export default function AIProductForm({
       descriptionInput.value = aiResult.description
     }
     if (priceInput) {
-      // Use the middle of the price range
       const suggestedPrice = (aiResult.pricingSuggestion.minPrice + aiResult.pricingSuggestion.maxPrice) / 2
       priceInput.value = suggestedPrice.toFixed(2)
     }
@@ -166,14 +211,12 @@ export default function AIProductForm({
     try {
       const formData = new FormData(e.currentTarget)
       
-      // If we have an uploaded file, upload it to Supabase first
       if (uploadedFile) {
         console.log('Uploading file to Supabase...')
         const uploadedImageUrl = await uploadImageToSupabase(uploadedFile)
         console.log('Upload successful, URL:', uploadedImageUrl)
         formData.set('imageUrl', uploadedImageUrl)
       } else if (imageUrl && !imageUrl.startsWith('blob:')) {
-        // If it's a URL (not a blob), use it directly
         console.log('Using existing URL:', imageUrl)
         formData.set('imageUrl', imageUrl)
       } else {
@@ -182,11 +225,14 @@ export default function AIProductForm({
         return
       }
 
+      if (adVideoUrl) {
+        formData.set('adVideoUrl', adVideoUrl)
+      }
+
       console.log('Calling onSubmit with formData...')
       await onSubmit(formData)
       console.log('onSubmit completed successfully')
       
-      // Close the form after successful submission
       onCancel()
     } catch (err) {
       console.error('Error in handleSubmit:', err)
@@ -256,22 +302,51 @@ export default function AIProductForm({
                   alt="Product preview"
                   className="w-full h-48 object-cover rounded-lg border border-gray-200"
                 />
-                <button
-                  type="button"
-                  onClick={analyzeImage}
-                  disabled={isAnalyzing}
-                  className="absolute top-2 right-2 flex items-center px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isAnalyzing ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Camera className="w-4 h-4 mr-2" />
-                  )}
-                  {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
-                </button>
+                <div className="absolute top-2 right-2 flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={analyzeImage}
+                    disabled={isAnalyzing}
+                    className="flex items-center px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isAnalyzing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4 mr-2" />
+                    )}
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={generateAd}
+                    disabled={isGeneratingAd}
+                    className="flex items-center px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingAd ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Video className="w-4 h-4 mr-2" />
+                    )}
+                    {isGeneratingAd ? 'Generating Ad...' : 'Generate Ad with AI'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Ad Preview */}
+          {adVideoUrl && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Generated Ad Preview
+              </label>
+              <video
+                src={adVideoUrl}
+                controls
+                className="w-full h-48 object-cover rounded-lg border border-gray-200"
+              />
+            </div>
+          )}
 
           {/* AI Analysis Results */}
           <AnimatePresence>
@@ -438,6 +513,7 @@ export default function AIProductForm({
             <li>• Upload a clear, well-lit image for better AI analysis</li>
             <li>• AI can help you avoid underpricing your valuable work</li>
             <li>• Use AI-generated descriptions as a starting point, then personalize them</li>
+            <li>• Generate a video ad to showcase your product's unique appeal</li>
             <li>• Consider the cultural significance and craftsmanship in your pricing</li>
           </ul>
         </div>

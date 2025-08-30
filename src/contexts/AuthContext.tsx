@@ -32,6 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Initial session check:', session?.user?.id)
       setSession(session)
       setUser(session?.user ?? null)
+      // Persist a copy of the Supabase session for app use; do not clear except on explicit sign out
+      try {
+        if (session) {
+          localStorage.setItem('km_session_json', JSON.stringify(session))
+          localStorage.setItem('km_session_updated_at', Date.now().toString())
+        }
+      } catch {}
       if (session?.user) {
         fetchProfile(session.user.id)
       }
@@ -45,6 +52,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Auth state change:', event, session?.user?.id)
       setSession(session)
       setUser(session?.user ?? null)
+      // Update persisted session copy when available; do not remove here to honor "only clear on sign out"
+      try {
+        if (session) {
+          localStorage.setItem('km_session_json', JSON.stringify(session))
+          localStorage.setItem('km_session_updated_at', Date.now().toString())
+        }
+      } catch {}
       if (session?.user) {
         await fetchProfile(session.user.id)
       } else {
@@ -335,6 +349,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!preserveKeys.has(key)) toDelete.push(key)
         }
         toDelete.forEach(k => localStorage.removeItem(k))
+        // Explicitly remove our persisted session copy
+        localStorage.removeItem('km_session_json')
+        localStorage.removeItem('km_session_updated_at')
         sessionStorage.clear()
       } catch (e) {
         console.warn('Selective storage clear failed, falling back to full clear')

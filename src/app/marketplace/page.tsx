@@ -277,7 +277,7 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 py-8">
+    <div className="min-h-screen heritage-bg py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -286,10 +286,10 @@ export default function Marketplace() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold heritage-title mb-4">
             Artisan Marketplace
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--heritage-brown)]">
             Discover unique handcrafted treasures from talented artisans
           </p>
         </motion.div>
@@ -299,7 +299,7 @@ export default function Marketplace() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
+          className="heritage-card p-6 mb-8 border border-heritage-gold/40"
         >
           <div className="grid md:grid-cols-2 gap-4">
             {/* Search */}
