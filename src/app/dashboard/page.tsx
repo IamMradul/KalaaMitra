@@ -1,15 +1,32 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion } from 'framer-motion'
 
 export default function Dashboard() {
   const { user, profile, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
+    // Handle Google session from OAuth callback
+    const googleSession = searchParams.get('google_session')
+    if (googleSession) {
+      try {
+        const googleUser = JSON.parse(decodeURIComponent(googleSession))
+        localStorage.setItem('googleUserSession', JSON.stringify(googleUser))
+        console.log('Google session stored:', googleUser)
+        
+        // Reload the page to trigger auth context update
+        window.location.href = window.location.pathname
+        return
+      } catch (error) {
+        console.error('Error parsing Google session:', error)
+      }
+    }
+
     if (!loading) {
       if (!user) {
         router.push('/auth/signin')
@@ -21,7 +38,7 @@ export default function Dashboard() {
         }
       }
     }
-  }, [user, profile, loading, router])
+  }, [user, profile, loading, router, searchParams])
 
   if (loading) {
     return (

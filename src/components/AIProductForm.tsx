@@ -81,7 +81,7 @@ export default function AIProductForm({
       console.log('Uploading to path:', filePath)
 
       const { data, error } = await supabase.storage
-        .from('videos')
+        .from('images')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -95,7 +95,7 @@ export default function AIProductForm({
       console.log('Upload successful, getting public URL...')
 
       const { data: { publicUrl } } = supabase.storage
-        .from('videos')
+        .from('images')
         .getPublicUrl(filePath)
 
       console.log('Public URL generated:', publicUrl)

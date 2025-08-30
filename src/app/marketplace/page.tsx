@@ -9,6 +9,7 @@ import { logActivity } from '@/lib/activity'
 import { hammingDistanceHex as hammingHex } from '@/lib/image-similarity'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 type ProductBase = Database['public']['Tables']['products']['Row']
 type ProductWithFeatures = ProductBase & {
@@ -25,6 +26,7 @@ type Product = ProductBase & {
 
 export default function Marketplace() {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -36,8 +38,24 @@ export default function Marketplace() {
   const [recLoading, setRecLoading] = useState(false)
 
   useEffect(() => {
+    // Handle Google session from OAuth callback
+    const googleSession = searchParams.get('google_session')
+    if (googleSession) {
+      try {
+        const googleUser = JSON.parse(decodeURIComponent(googleSession))
+        localStorage.setItem('googleUserSession', JSON.stringify(googleUser))
+        console.log('Google session stored:', googleUser)
+        
+        // Reload the page to trigger auth context update
+        window.location.href = window.location.pathname
+        return
+      } catch (error) {
+        console.error('Error parsing Google session:', error)
+      }
+    }
+
     fetchProducts()
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     filterProducts()

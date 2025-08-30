@@ -1,13 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { ShoppingCart, LogOut, Menu, X, Palette } from 'lucide-react'
 
 export default function Navbar() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, signOut, loading } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure client-side rendering to prevent hydration errors
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Prevent hydration mismatch by showing consistent structure during loading
+  if (!mounted) {
+    return (
+      <nav className="glass-nav border-b border-heritage-gold/40 shadow-soft sticky top-0 z-50 heritage-bg">
+        <div className="container-custom">
+          <div className="flex justify-between items-center py-6">
+            {/* Logo placeholder */}
+            <div className="flex items-center space-x-4 group">
+              <div className="w-14 h-14 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-gold)] rounded-2xl flex items-center justify-center">
+                <Palette className="w-7 h-7 text-white" />
+              </div>
+              <span className="text-3xl font-bold heritage-title">
+                KalaMitra
+              </span>
+            </div>
+            {/* Navigation placeholder */}
+            <div className="hidden md:flex items-center space-x-10">
+              <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    )
+  }
+
+
 
   const handleSignOut = async () => {
     await signOut()
@@ -37,7 +71,12 @@ export default function Navbar() {
               <span className="relative z-10">Marketplace</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            {user ? (
+            {loading ? (
+              <div className="flex items-center space-x-6">
+                <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ) : user ? (
               <>
                 {profile?.role === 'seller' && (
                   <Link 
@@ -108,7 +147,12 @@ export default function Navbar() {
               >
                 Marketplace
               </Link>
-              {user ? (
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="w-32 h-8 bg-gray-200 rounded animate-pulse mx-6"></div>
+                  <div className="w-32 h-8 bg-gray-200 rounded animate-pulse mx-6"></div>
+                </div>
+              ) : user ? (
                 <>
                   {profile?.role === 'seller' && (
                     <Link 
