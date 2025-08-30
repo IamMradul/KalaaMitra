@@ -513,7 +513,7 @@ export default function AIProductForm({
             <li>• Upload a clear, well-lit image for better AI analysis</li>
             <li>• AI can help you avoid underpricing your valuable work</li>
             <li>• Use AI-generated descriptions as a starting point, then personalize them</li>
-            <li>• Generate a video ad to showcase your product's unique appeal</li>
+            <li>• Generate a video ad to showcase your product&apos;s unique appeal</li>
             <li>• Consider the cultural significance and craftsmanship in your pricing</li>
           </ul>
         </div>
