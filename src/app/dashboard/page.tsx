@@ -4,8 +4,17 @@ import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion } from 'framer-motion'
+import { Suspense } from 'react'
 
 export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div><p className="text-gray-600">Loading...</p></div></div>}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+function DashboardContent() {
   const { user, profile, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -18,7 +27,6 @@ export default function Dashboard() {
         const googleUser = JSON.parse(decodeURIComponent(googleSession))
         localStorage.setItem('googleUserSession', JSON.stringify(googleUser))
         console.log('Google session stored:', googleUser)
-        
         // Reload the page to trigger auth context update
         window.location.href = window.location.pathname
         return

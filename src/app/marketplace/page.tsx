@@ -10,6 +10,7 @@ import { hammingDistanceHex as hammingHex } from '@/lib/image-similarity'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
 type ProductBase = Database['public']['Tables']['products']['Row']
 type ProductWithFeatures = ProductBase & {
@@ -25,6 +26,14 @@ type Product = ProductBase & {
 }
 
 export default function Marketplace() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div><p className="text-gray-600">Loading...</p></div></div>}>
+      <MarketplaceContent />
+    </Suspense>
+  )
+}
+
+function MarketplaceContent() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
