@@ -56,19 +56,18 @@ export async function GET(request: NextRequest) {
 
     if (existingProfile) {
       console.log('User already exists:', existingProfile)
-      
-      // Update the existing profile with Google information if needed
-      const { error: updateError } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          profile_image: googleUser.picture // Update with Google profile picture
-        })
-        .eq('id', existingProfile.id)
-
-      if (updateError) {
-        console.warn('Failed to update profile with Google info:', updateError)
+      // Only update the profile image if it is not already set
+      if (!existingProfile.profile_image) {
+        const { error: updateError } = await supabaseAdmin
+          .from('profiles')
+          .update({
+            profile_image: googleUser.picture // Update with Google profile picture
+          })
+          .eq('id', existingProfile.id)
+        if (updateError) {
+          console.warn('Failed to update profile with Google info:', updateError)
+        }
       }
-
       // User exists, redirect to appropriate dashboard with session data
       const redirectUrl = existingProfile.role === 'seller' ? '/dashboard' : '/marketplace'
       const sessionData = encodeURIComponent(JSON.stringify({

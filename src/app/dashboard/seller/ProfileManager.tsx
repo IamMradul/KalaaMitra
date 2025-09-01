@@ -99,6 +99,25 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       
       let imageUrl = formData.profile_image
       if (imageFile) {
+        // If there is an existing profile image, delete it from storage
+        if (formData.profile_image) {
+          try {
+            // Extract the path after the bucket name (images/)
+            const url = formData.profile_image
+            const match = url.match(/images\/(profile-images\/[^?]+)/)
+            const filePath = match ? match[1] : null
+            if (filePath) {
+              const { error: deleteError } = await supabase.storage
+                .from('images')
+                .remove([filePath])
+              if (deleteError) {
+                console.warn('Failed to delete old profile image:', deleteError)
+              }
+            }
+          } catch (deleteErr) {
+            console.warn('Error while deleting old profile image:', deleteErr)
+          }
+        }
         try {
           imageUrl = await uploadImage(imageFile)
         } catch (uploadError) {
