@@ -14,9 +14,8 @@ const SCOPES = [
 ].join(' ')
 
 // Redirect URI (must match what's configured in Google Cloud Console)
-const REDIRECT_URI = typeof window !== 'undefined' 
-  ? `${window.location.origin}/api/auth/google/callback`
-  : 'http://localhost:3000/api/auth/google/callback'
+const REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI!;
+
 
 export interface GoogleUser {
   id: string
