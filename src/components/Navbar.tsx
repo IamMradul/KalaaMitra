@@ -15,6 +15,27 @@ export default function Navbar() {
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
     { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+    { code: 'assamese', label: 'অসমীয়া', flag: '🇮🇳' },
+    { code: 'bengali', label: 'বাংলা', flag: '🇮🇳' },
+    { code: 'bodo', label: 'बर’ / बड़ो', flag: '🇮🇳' },
+    { code: 'dogri', label: 'डोगरी', flag: '🇮🇳' },
+    { code: 'gujarati', label: 'ગુજરાતી', flag: '🇮🇳' },
+    { code: 'kannad', label: 'ಕನ್ನಡ', flag: '🇮🇳' },
+    { code: 'kashmiri', label: 'کٲشُر / कश्मीरी', flag: '🇮🇳' },
+    { code: 'konkani', label: 'कोंकणी', flag: '🇮🇳' },
+    { code: 'maithili', label: 'मैथिली', flag: '🇮🇳' },
+    { code: 'malyalam', label: 'മലയാളം', flag: '🇮🇳' },
+    { code: 'manipuri', label: 'ꯃꯦꯇꯩꯂꯣꯟ (Meitei)', flag: '🇮🇳' },
+    { code: 'marathi', label: 'मराठी', flag: '🇮🇳' },
+    { code: 'nepali', label: 'नेपाली', flag: '🇳🇵' },
+    { code: 'oriya', label: 'ଓଡ଼ିଆ', flag: '🇮🇳' },
+    { code: 'punjabi', label: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
+    { code: 'sanskrit', label: 'संस्कृत', flag: '🇮🇳' },
+    { code: 'santhali', label: 'ᱥᱟᱱᱛᱟᱲᱤ', flag: '🇮🇳' },
+    { code: 'sindhi', label: 'سنڌي / सिंधी', flag: '🇮🇳' },
+    { code: 'tamil', label: 'தமிழ்', flag: '🇮🇳' },
+    { code: 'telgu', label: 'తెలుగు', flag: '🇮🇳' },
+    { code: 'urdu', label: 'اردو', flag: '🇵🇰' },
   ];
 
   // Ensure client-side rendering to prevent hydration errors
@@ -227,6 +248,26 @@ export default function Navbar() {
                   </Link>
                 </div>
               )}
+
+              {/* Mobile Language Selector */}
+              <div className="pt-4 border-t border-heritage-gold/50 px-6">
+                <label htmlFor="mobile-language" className="block text-sm text-gray-600 mb-2">
+                  {t('navigation.language')}
+                </label>
+                <select
+                  id="mobile-language"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-heritage-gold"
+                  value={i18n.language}
+                  onChange={handleLanguageChange}
+                  aria-label="Select language"
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.flag} {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}

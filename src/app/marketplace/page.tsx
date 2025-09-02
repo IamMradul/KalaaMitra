@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
+import { translateArray } from '@/lib/translate'
 
 type ProductBase = Database['public']['Tables']['products']['Row']
 type ProductWithFeatures = ProductBase & {
@@ -37,17 +38,20 @@ export default function Marketplace() {
 
 function MarketplaceContent() {
   const { user } = useAuth()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [categories, setCategories] = useState<string[]>([])
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([])
+  const [displayCategories, setDisplayCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [searchLogTimer, setSearchLogTimer] = useState<NodeJS.Timeout | null>(null)
   const [recommended, setRecommended] = useState<ProductBase[]>([])
   const [recLoading, setRecLoading] = useState(false)
+  const [displayRecommended, setDisplayRecommended] = useState<ProductBase[]>([])
 
   useEffect(() => {
     // Handle Google session from OAuth callback
@@ -85,13 +89,13 @@ function MarketplaceContent() {
 
       if (error) throw error
 
-      setProducts(data || [])
+  setProducts(data || [])
       
       // Extract unique categories
-      const uniqueCategories = [...new Set(data?.map(p => p.category) || [])]
-      setCategories(uniqueCategories)
+  const uniqueCategories = [...new Set(data?.map(p => p.category) || [])]
+  setCategories(uniqueCategories)
       
-      setLoading(false)
+  setLoading(false)
     } catch (error) {
       console.error('Error fetching products:', error)
       setLoading(false)
@@ -113,8 +117,64 @@ function MarketplaceContent() {
       filtered = filtered.filter(product => product.category === selectedCategory)
     }
 
-    setFilteredProducts(filtered)
+  setFilteredProducts(filtered)
   }
+  // Translate product titles/categories and category list for display when language changes
+  useEffect(() => {
+    const applyDisplayTranslations = async () => {
+      try {
+        const lang = i18n.language
+        if (!products?.length) {
+          setDisplayProducts([])
+          // Translate categories directly for stable mapping
+          if (categories?.length) {
+            const trCatsList = await translateArray(categories, lang)
+            setDisplayCategories(trCatsList)
+          } else {
+            setDisplayCategories([])
+          }
+          return
+        }
+        const titles = products.map(p => p.title || '')
+        // Translate categories from the categories array (one-to-one mapping)
+        const trCatsList = categories?.length ? await translateArray(categories, lang) : []
+        const trTitles = await translateArray(titles, lang)
+        const dp = products.map((p, idx) => {
+          const origCat = p.category
+          const catIndex = categories.findIndex(c => c === origCat)
+          const displayCat = catIndex >= 0 ? trCatsList[catIndex] || origCat : origCat
+          return { ...p, title: trTitles[idx] || p.title, category: displayCat }
+        })
+        setDisplayProducts(dp)
+        setDisplayCategories(trCatsList)
+      } catch {
+        setDisplayProducts(products)
+        setDisplayCategories(categories)
+      }
+    }
+    applyDisplayTranslations()
+  }, [products, categories, i18n.language])
+
+  // Translate recommended list for display
+  useEffect(() => {
+    const applyDisplayTranslations = async () => {
+      try {
+        const lang = i18n.language
+        if (!recommended?.length) {
+          setDisplayRecommended([])
+          return
+        }
+        const titles = recommended.map(p => p.title || '')
+        const trTitles = await translateArray(titles, lang)
+        const dp = recommended.map((p, idx) => ({ ...p, title: trTitles[idx] || p.title }))
+        setDisplayRecommended(dp)
+      } catch {
+        setDisplayRecommended(recommended)
+      }
+    }
+    applyDisplayTranslations()
+  }, [recommended, i18n.language])
+
 
   // Debounced search logging
   useEffect(() => {
@@ -353,9 +413,10 @@ function MarketplaceContent() {
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
               >
                 <option value="">{t('marketplace.allCategories')}</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                {/* Map display labels with original values for filtering */}
+                {displayCategories.map((label, idx) => (
+                  <option key={`${label}-${idx}`} value={categories[idx] || label}>
+                    {label}
                   </option>
                 ))}
               </select>
@@ -404,11 +465,11 @@ function MarketplaceContent() {
                   <div className="p-4">
                     <Link href={`/product/${product.id}`}>
                       <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors">
-                        {product.title}
+                        {displayProducts.find(p => p.id === product.id)?.title || product.title}
                       </h3>
                     </Link>
                     
-                    <p className="text-sm text-gray-600 mb-2">{product.category}</p>
+                    <p className="text-sm text-gray-600 mb-2">{displayProducts.find(p => p.id === product.id)?.category || product.category}</p>
                     <p className="text-xs text-gray-500 mb-3">{t('product.byAuthor', { name: product.seller?.name || t('product.unknownArtisan') })}</p>
                     
                     <div className="flex items-center justify-between">
@@ -458,7 +519,7 @@ function MarketplaceContent() {
               {t('marketplace.becauseViewedSimilar')}
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl-grid-cols-4 gap-6">
-              {recommended.map((product) => (
+              {displayRecommended.map((product) => (
                 <motion.div
                   key={product.id}
                   initial={{ opacity: 0, scale: 0.9 }}

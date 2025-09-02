@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import AIService from '@/lib/ai-service'
 import { Database } from '@/lib/supabase'
 import { useTranslation } from 'react-i18next'
+import { translateText } from '@/lib/translate'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Product = Database['public']['Tables']['products']['Row']
@@ -18,7 +19,7 @@ type Props = {
 }
 
 export default function ProfileManager({ profile, products, onProfileUpdate }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
@@ -31,6 +32,9 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(profile?.profile_image || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [displayName, setDisplayName] = useState(formData.name)
+  const [displayBio, setDisplayBio] = useState(formData.bio)
+  const [displayDesc, setDisplayDesc] = useState(formData.store_description)
 
   // Update form data when profile changes
   useEffect(() => {
@@ -44,6 +48,33 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       setImagePreview(profile.profile_image)
     }
   }, [profile])
+
+  // Translate dynamic fields for display (read-only mode). Keep raw values for editing.
+  useEffect(() => {
+    const run = async () => {
+      try {
+        if (isEditing) {
+          setDisplayName(formData.name)
+          setDisplayBio(formData.bio)
+          setDisplayDesc(formData.store_description)
+          return
+        }
+        const [n, b, d] = await Promise.all([
+          translateText(formData.name || '', i18n.language),
+          translateText(formData.bio || '', i18n.language),
+          translateText(formData.store_description || '', i18n.language),
+        ])
+        setDisplayName(n || formData.name)
+        setDisplayBio(b || formData.bio)
+        setDisplayDesc(d || formData.store_description)
+      } catch {
+        setDisplayName(formData.name)
+        setDisplayBio(formData.bio)
+        setDisplayDesc(formData.store_description)
+      }
+    }
+    run()
+  }, [formData.name, formData.bio, formData.store_description, i18n.language, isEditing])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -305,21 +336,21 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('seller.profile.fields.storeName.label')}
                 </label>
-                <p className="text-gray-900">{formData.name || t('seller.profile.notSet')}</p>
+                <p className="text-gray-900">{displayName || t('seller.profile.notSet')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('seller.profile.fields.bio.label')}
                 </label>
-                <p className="text-gray-900">{formData.bio || t('seller.profile.noBio')}</p>
+                <p className="text-gray-900">{displayBio || t('seller.profile.noBio')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t('seller.profile.fields.description.label')}
                 </label>
-                <p className="text-gray-900">{formData.store_description || t('seller.profile.noDescription')}</p>
+                <p className="text-gray-900">{displayDesc || t('seller.profile.noDescription')}</p>
               </div>
             </div>
           )}

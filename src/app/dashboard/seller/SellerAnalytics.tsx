@@ -4,19 +4,22 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import AIService, { type SellerAnalyticsSnapshot } from '@/lib/ai-service'
 import { useTranslation } from 'react-i18next'
+import { translateArray, translateText } from '@/lib/translate'
 
 type Props = { sellerId: string }
 
 export default function SellerAnalytics({ sellerId }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [totalViews, setTotalViews] = useState(0)
   const [uniqueVisitors, setUniqueVisitors] = useState(0)
   const [topProducts, setTopProducts] = useState<{ id: string; title: string; views: number }[]>([])
   const [guidance, setGuidance] = useState<string>('')
+  const [rawGuidance, setRawGuidance] = useState<string>('')
   const [qaLoading, setQaLoading] = useState(false)
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState('')
+  const [quotaCooldownUntil, setQuotaCooldownUntil] = useState<number>(0)
 
   const toBullets = (text: string): string[] => {
     if (!text) return []
@@ -70,10 +73,17 @@ export default function SellerAnalytics({ sellerId }: Props) {
             counts.set(pid, (counts.get(pid) || 0) + 1)
           }
         }
-        const top = [...counts.entries()]
+        let top = [...counts.entries()]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
           .map(([id, views]) => ({ id, views, title: (sellerProducts || []).find(p => p.id === id)?.title || 'Untitled' }))
+        // Translate top product titles for display
+        try {
+          const lang = i18n.language
+          const titles = top.map(t => t.title)
+          const tr = await translateArray(titles, lang)
+          top = top.map((p, idx) => ({ ...p, title: tr[idx] || p.title }))
+        } catch {}
         setTopProducts(top)
 
         // AI Tips (fallback to rules if API fails)
@@ -84,7 +94,15 @@ export default function SellerAnalytics({ sellerId }: Props) {
             uniqueVisitors,
             topProducts: top.map(t => ({ title: t.title, views: t.views }))
           })
-          setGuidance(tips)
+          // Save raw guidance and translate for display
+          setRawGuidance(tips)
+          // Translate AI tips text
+          try {
+            const tr = await translateText(tips, i18n.language)
+            setGuidance(tr)
+          } catch {
+            setGuidance(tips)
+          }
         } catch {
           if (top.length > 0) {
             const topTitles = top.map(t => t.title).join(', ')
@@ -101,6 +119,20 @@ export default function SellerAnalytics({ sellerId }: Props) {
     }
     load()
   }, [sellerId])
+
+  // Re-translate cached guidance when language changes to avoid re-calling AI
+  useEffect(() => {
+    const run = async () => {
+      if (!rawGuidance) return
+      try {
+        const tr = await translateText(rawGuidance, i18n.language)
+        setGuidance(tr)
+      } catch {
+        setGuidance(rawGuidance)
+      }
+    }
+    run()
+  }, [i18n.language, rawGuidance])
 
   if (loading) {
     return <div className="text-gray-600">{t('seller.analyticsShort.loading')}</div>
@@ -160,6 +192,11 @@ export default function SellerAnalytics({ sellerId }: Props) {
               disabled={qaLoading || !question.trim()}
               onClick={async () => {
                 try {
+                  // Simple cooldown after quota errors
+                  if (Date.now() < quotaCooldownUntil) {
+                    setAnswer(t('seller.analyticsShort.limitReached', { defaultValue: 'AI limit reached. Please try again later.' }))
+                    return
+                  }
                   setQaLoading(true)
                   const ai = AIService.getInstance()
                   const snapshot: SellerAnalyticsSnapshot = {
@@ -167,8 +204,24 @@ export default function SellerAnalytics({ sellerId }: Props) {
                     uniqueVisitors,
                     topProducts: topProducts.map(t => ({ title: t.title, views: t.views }))
                   }
-                  const tips = await ai.answerSellerQuestion(snapshot, question)
-                  setAnswer(tips)
+                  try {
+                    const tips = await ai.answerSellerQuestion(snapshot, question)
+                    // Translate Q&A answer
+                    try {
+                      const tr = await translateText(tips, i18n.language)
+                      setAnswer(tr)
+                    } catch {
+                      setAnswer(tips)
+                    }
+                  } catch (err: any) {
+                    const msg = String(err?.message || err || '')
+                    if (msg.includes('429') || msg.toLowerCase().includes('quota')) {
+                      setQuotaCooldownUntil(Date.now() + 60_000)
+                      setAnswer(t('seller.analyticsShort.limitReached', { defaultValue: 'Daily AI limit reached. Please try again later.' }))
+                    } else {
+                      setAnswer(t('common.error', { defaultValue: 'Something went wrong. Please try again.' }))
+                    }
+                  }
                 } finally {
                   setQaLoading(false)
                 }

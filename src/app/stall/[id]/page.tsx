@@ -10,12 +10,13 @@ import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { translateArray, translateText } from '@/lib/translate'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
 
 export default function StallPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const params = useParams()
   const { user } = useAuth()
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
@@ -26,7 +27,7 @@ export default function StallPage() {
     if (params.id) {
       fetchStallData(params.id as string)
     }
-  }, [params.id])
+  }, [params.id, i18n.language])
 
   useEffect(() => {
     if (user && params.id) {
@@ -44,7 +45,16 @@ export default function StallPage() {
         .single()
 
       if (profileError) throw profileError
-      setStallProfile(profileData)
+      // Translate profile name/bio/description
+      try {
+        const lang = i18n.language
+        const name = await translateText(profileData.name || '', lang)
+        const bio = await translateText(profileData.bio || '', lang)
+        const desc = await translateText(profileData.store_description || '', lang)
+        setStallProfile({ ...profileData, name, bio, store_description: desc })
+      } catch {
+        setStallProfile(profileData)
+      }
 
       // Fetch stall products
       const { data: productsData, error: productsError } = await supabase
@@ -54,7 +64,18 @@ export default function StallPage() {
         .order('created_at', { ascending: false })
 
       if (productsError) throw productsError
-      setProducts(productsData || [])
+      // Translate product titles and categories in this stall
+      try {
+        const lang = i18n.language
+        const titles = (productsData || []).map(p => p.title || '')
+        const cats = (productsData || []).map(p => p.category || '')
+        const trTitles = await translateArray(titles, lang)
+        const trCats = await translateArray(cats, lang)
+        const translated = (productsData || []).map((p, idx) => ({ ...p, title: trTitles[idx] || p.title, category: trCats[idx] || p.category }))
+        setProducts(translated as Product[])
+      } catch {
+        setProducts(productsData || [])
+      }
       
       setLoading(false)
     } catch (error) {
