@@ -22,7 +22,7 @@ export default function Home() {
       <section className="relative section-padding overflow-hidden heritage-bg">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          {/* Mandala SVG or pattern can be placed here if available */}
+          {/* Mandala SVG or pattern can be placed here if available*/}
         </div>
         <div className="container-custom relative">
           <div className="text-center max-w-5xl mx-auto">
