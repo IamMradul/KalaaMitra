@@ -1,4 +1,22 @@
+"use client"
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import '@/lib/i18n'
+
 export default function Footer() {
+  const { t } = useTranslation()
+  const [mounted, setMounted] = useState(false)
+
+  // Avoid hydration mismatches by rendering a stable placeholder until mounted
+  useEffect(() => setMounted(true), [])
+
+  if (!mounted) {
+    return (
+      <footer className="heritage-card border-t border-heritage-gold/40 mt-auto heritage-bg">
+        <div className="container-custom py-16" />
+      </footer>
+    )
+  }
   return (
     <footer className="heritage-card border-t border-heritage-gold/40 mt-auto heritage-bg">
       <div className="container-custom py-16">
@@ -9,50 +27,50 @@ export default function Footer() {
               <div className="w-12 h-12 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-red)] rounded-2xl flex items-center justify-center shadow-medium hover:shadow-glow transition-all duration-300 hover:scale-110 border-2 border-heritage-gold">
                 <span className="text-white font-bold text-lg">KM</span>
               </div>
-              <span className="text-3xl font-bold heritage-title">KalaMitra</span>
+              <span className="text-3xl font-bold heritage-title">{t('brand.name')}</span>
             </div>
             <p className="text-gray-600 text-lg mb-6 max-w-md leading-relaxed">
-              Preserving Tradition, Empowering Artisans ✨
+              {t('footer.tagline')}
             </p>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Join our community of artisans and art lovers, preserving cultural heritage while embracing the future of digital commerce.
+              {t('footer.communityBlurb')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Quick Links</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('footer.quickLinks')}</h3>
             <div className="space-y-4">
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">About Us</span>
+        <span className="group-hover:underline">{t('footer.about')}</span>
               </a>
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">How It Works</span>
+        <span className="group-hover:underline">{t('footer.howItWorks')}</span>
               </a>
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">Success Stories</span>
+        <span className="group-hover:underline">{t('footer.successStories')}</span>
               </a>
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">Support</span>
+        <span className="group-hover:underline">{t('footer.support')}</span>
               </a>
             </div>
           </div>
 
           {/* Legal */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Legal</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('footer.legal')}</h3>
             <div className="space-y-4">
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">Privacy Policy</span>
+                <span className="group-hover:underline">{t('footer.privacy')}</span>
               </a>
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">Terms of Service</span>
+                <span className="group-hover:underline">{t('footer.terms')}</span>
               </a>
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">Cookie Policy</span>
+                <span className="group-hover:underline">{t('footer.cookies')}</span>
               </a>
               <a href="#" className="block text-gray-600 hover:text-heritage-gold transition-all duration-300 hover:translate-x-2 transform group">
-                <span className="group-hover:underline">Contact Us</span>
+                <span className="group-hover:underline">{t('footer.contact')}</span>
               </a>
             </div>
           </div>
@@ -61,7 +79,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-orange-100/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-sm">
-            © 2024 KalaMitra. All rights reserved.
+            {t('footer.copyright')}
           </p>
           <div className="flex items-center space-x-8 mt-6 md:mt-0">
             {/* LinkedIn */}

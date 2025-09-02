@@ -7,6 +7,7 @@ import { ShoppingCart, Trash2, ArrowLeft, Package } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 
 type CartItem = Database['public']['Tables']['cart']['Row'] & {
   product: {
@@ -19,6 +20,7 @@ type CartItem = Database['public']['Tables']['cart']['Row'] & {
 
 export default function CartPage() {
   const { user, profile } = useAuth()
+  const { t } = useTranslation()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -92,12 +94,12 @@ export default function CartPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Access denied</p>
+          <p className="text-gray-600 mb-4">{t('errors.forbidden')}</p>
           <Link
             href="/marketplace"
             className="text-orange-600 hover:text-orange-700 font-medium"
           >
-            Go to Marketplace
+            {t('navigation.marketplace')}
           </Link>
         </div>
       </div>
@@ -132,14 +134,14 @@ export default function CartPage() {
               className="inline-flex items-center text-[var(--heritage-gold)] hover:text-[var(--heritage-red)] font-medium"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Marketplace
+              {t('marketplace.backToMarketplace')}
             </Link>
           </div>
           <h1 className="text-4xl font-bold heritage-title mb-2">
-            Shopping Cart
+            {t('cart.title')}
           </h1>
           <p className="text-lg text-[var(--heritage-brown)]">
-            Review your selected items
+            {t('cart.reviewSelectedItems')}
           </p>
         </motion.div>
 
@@ -152,17 +154,17 @@ export default function CartPage() {
           >
             <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              Your cart is empty
+              {t('cart.empty')}
             </h2>
             <p className="text-gray-600 mb-6">
-              Start shopping to add items to your cart
+              {t('cart.emptyDescription')}
             </p>
             <Link
               href="/marketplace"
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
             >
               <Package className="w-5 h-5 mr-2" />
-              Browse Products
+              {t('marketplace.browseProducts')}
             </Link>
           </motion.div>
         ) : (
@@ -176,7 +178,7 @@ export default function CartPage() {
             >
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-orange-200">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                  Cart Items ({cartItems.length})
+                  {t('cart.items')} ({cartItems.length})
                 </h2>
                 
                 <div className="space-y-4">
@@ -236,7 +238,7 @@ export default function CartPage() {
                       <button
                         onClick={() => removeFromCart(item.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remove item"
+                        title={t('cart.remove')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -255,21 +257,21 @@ export default function CartPage() {
             >
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-orange-200 sticky top-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                  Order Summary
+                  {t('cart.orderSummary')}
                 </h2>
                 
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-gray-600">{t('cart.subtotal')}</span>
                     <span className="font-medium">₹{calculateTotal().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium text-green-600">Free</span>
+                    <span className="text-gray-600">{t('cart.shipping')}</span>
+                    <span className="font-medium text-green-600">{t('cart.free')}</span>
                   </div>
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between">
-                      <span className="text-lg font-semibold text-gray-900">Total</span>
+                      <span className="text-lg font-semibold text-gray-900">{t('cart.total')}</span>
                       <span className="text-2xl font-bold text-orange-600">
                         ₹{calculateTotal().toFixed(2)}
                       </span>
@@ -281,11 +283,11 @@ export default function CartPage() {
                   disabled
                   className="w-full px-6 py-3 bg-gray-300 text-gray-500 font-semibold rounded-lg cursor-not-allowed"
                 >
-                  Checkout (Coming Soon)
+                  {t('cart.checkout')} ({t('common.loading')})
                 </button>
 
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  Secure checkout will be available soon
+                  {t('cart.secureCheckout')} {t('common.loading')}
                 </p>
               </div>
             </motion.div>

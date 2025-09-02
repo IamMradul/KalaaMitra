@@ -1,7 +1,21 @@
+'use client'
 import Link from 'next/link'
 import { ArrowRight, Palette, ShoppingBag, Users, Shield, Zap } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
+  const { t } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -15,35 +29,30 @@ export default function Home() {
             {/* Badge */}
             <div className="inline-flex items-center px-6 py-3 heritage-card rounded-full border border-heritage-gold/40 shadow-soft mb-12 animate-slide-in-up">
               <Zap className="w-5 h-5 text-[var(--heritage-gold)] mr-3" />
-              <span className="text-sm font-medium text-[var(--heritage-brown)]">AI-Powered Artisan Marketplace</span>
+              <span className="text-sm font-medium text-[var(--heritage-brown)]">{t('home.badge')}</span>
             </div>
             {/* Main Title */}
             <h1 className="text-6xl md:text-8xl font-bold heritage-title mb-8 leading-tight animate-slide-in-up animate-delay-100">
-              Welcome to{' '}
-              <span className="heritage-title">
-                KalaMitra
-              </span>
+              {t('home.welcome')} <span className="heritage-title">{t('brand.name')}</span>
             </h1>
             {/* Subtitle */}
             <p className="text-lg text-[var(--heritage-brown)] mb-8">
-              Discover unique handcrafted treasures from talented artisans. Every piece tells a story.
+              {t('home.subtitle1')}
             </p>
             <p className="text-lg text-[var(--heritage-brown)] mb-8">
-              From traditional crafts to modern designs, find pieces that speak to your soul.
+              {t('home.subtitle2')}
             </p>
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-8 justify-center mb-20 animate-slide-in-up animate-delay-300">
-              <Link href="/auth/signup?role=seller" className="btn-heritage group">
+              <Link href="/auth/signup?role=seller" className="btn-primary bg-white text-orange-600 hover:bg-gray-100 group">
                 <span className="flex items-center justify-center space-x-3">
-                  <Palette className="w-6 h-6" />
-                  <span>Join as Artisan</span>
+                  <span>{t('home.startSelling')}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Link>
-              <Link href="/marketplace" className="btn-heritage group">
+              <Link href="/marketplace" className="btn-secondary border-white text-white hover:bg-white hover:text-orange-600 group">
                 <span className="flex items-center justify-center space-x-3">
-                  <ShoppingBag className="w-6 h-6" />
-                  <span>Explore Marketplace</span>
+                  <span>{t('home.startShopping')}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Link>
@@ -53,15 +62,15 @@ export default function Home() {
             <div className="grid grid-cols-3 gap-12 max-w-3xl mx-auto animate-slide-in-up animate-delay-400">
               <div className="text-center group">
                 <div className="text-4xl font-bold text-gradient-primary mb-2 group-hover:scale-110 transition-transform duration-300">500+</div>
-                <div className="text-gray-600 font-medium">Artisans</div>
+                <div className="text-gray-600 font-medium">{t('home.stats.artisans')}</div>
               </div>
               <div className="text-center group">
                 <div className="text-4xl font-bold text-gradient-primary mb-2 group-hover:scale-110 transition-transform duration-300">1000+</div>
-                <div className="text-gray-600 font-medium">Products</div>
+                <div className="text-gray-600 font-medium">{t('home.stats.products')}</div>
               </div>
               <div className="text-center group">
                 <div className="text-4xl font-bold text-gradient-primary mb-2 group-hover:scale-110 transition-transform duration-300">50+</div>
-                <div className="text-gray-600 font-medium">Categories</div>
+                <div className="text-gray-600 font-medium">{t('home.stats.categories')}</div>
               </div>
             </div>
           </div>
@@ -79,11 +88,10 @@ export default function Home() {
         <div className="container-custom relative">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 animate-slide-in-up">
-              Why Choose{' '}
-              <span className="gradient-text-animated">KalaMitra</span>?
+              {t('home.whyChoose')} <span className="gradient-text-animated">{t('brand.name')}</span>?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-slide-in-up animate-delay-100">
-              We&apos;re building the future of artisan commerce with AI-powered tools and a community-driven approach.
+              {t('home.whyChooseDesc')}
             </p>
           </div>
 
@@ -92,10 +100,9 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
                 <Zap className="w-12 h-12 text-gradient-primary" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">AI-Powered Tools</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">{t('home.feature1.title')}</h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Enhance your products with AI photo editing and storytelling capabilities. 
-                Make your art shine with cutting-edge technology.
+                {t('home.feature1.desc')}
               </p>
             </div>
 
@@ -103,10 +110,9 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-amber-100 to-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
                 <Users className="w-12 h-12 text-gradient-secondary" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Community First</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">{t('home.feature2.title')}</h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Connect with fellow artisans and art enthusiasts in our vibrant community. 
-                Share knowledge, collaborate, and grow together.
+                {t('home.feature2.desc')}
               </p>
             </div>
 
@@ -114,10 +120,9 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
                 <Shield className="w-12 h-12 text-red-500" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">Secure & Reliable</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-6">{t('home.feature3.title')}</h3>
               <p className="text-gray-600 leading-relaxed text-lg">
-                Enterprise-grade security ensures your business and customers are protected. 
-                Focus on your art while we handle the security.
+                {t('home.feature3.desc')}
               </p>
             </div>
           </div>
@@ -135,10 +140,10 @@ export default function Home() {
         <div className="container-custom relative">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 animate-slide-in-up">
-              How It <span className="gradient-text-animated">Works</span>
+              {t('home.howItWorks')} <span className="gradient-text-animated">{t('home.works')}</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-slide-in-up animate-delay-100">
-              Get started with KalaMitra in just a few simple steps
+              {t('home.howItWorksDesc')}
             </p>
           </div>
 
@@ -147,29 +152,29 @@ export default function Home() {
               <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-2xl group-hover:scale-110 transition-transform duration-300 shadow-medium hover:shadow-glow">
                 1
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Sign Up</h3>
-              <p className="text-gray-600">Choose your role as an artisan or buyer</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('home.step1.title')}</h3>
+              <p className="text-gray-600">{t('home.step1.desc')}</p>
             </div>
             <div className="text-center group animate-slide-in-up animate-delay-200">
               <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-2xl group-hover:scale-110 transition-transform duration-300 shadow-medium hover:shadow-glow">
                 2
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Create Profile</h3>
-              <p className="text-gray-600">Set up your stall and showcase your work</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('home.step2.title')}</h3>
+              <p className="text-gray-600">{t('home.step2.desc')}</p>
             </div>
             <div className="text-center group animate-slide-in-up animate-delay-300">
               <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-2xl group-hover:scale-110 transition-transform duration-300 shadow-medium hover:shadow-glow">
                 3
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Start Selling</h3>
-              <p className="text-gray-600">List your products and reach customers</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('home.step3.title')}</h3>
+              <p className="text-gray-600">{t('home.step3.desc')}</p>
             </div>
             <div className="text-center group animate-slide-in-up animate-delay-400">
               <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-2xl group-hover:scale-110 transition-transform duration-300 shadow-medium hover:shadow-glow">
                 4
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Grow Business</h3>
-              <p className="text-gray-600">Use AI tools to enhance your products</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('home.step4.title')}</h3>
+              <p className="text-gray-600">{t('home.step4.desc')}</p>
             </div>
           </div>
         </div>
@@ -186,22 +191,21 @@ export default function Home() {
         <div className="container-custom relative">
           <div className="text-center max-w-4xl mx-auto">
             <h2 className="text-5xl md:text-6xl font-bold text-white mb-8 animate-slide-in-up">
-              Ready to Start Your Journey?
+              {t('home.readyToStart')}
             </h2>
             <p className="text-xl text-orange-100 mb-12 leading-relaxed animate-slide-in-up animate-delay-100">
-              Whether you&apos;re an artisan looking to showcase your work or an art lover seeking unique pieces, 
-              KalaMitra is your gateway to a world of creativity and tradition.
+              {t('home.readyToStartDesc')}
             </p>
             <div className="flex flex-col sm:flex-row gap-8 justify-center animate-slide-in-up animate-delay-200">
               <Link href="/auth/signup?role=seller" className="btn-primary bg-white text-orange-600 hover:bg-gray-100 group">
                 <span className="flex items-center justify-center space-x-3">
-                  <span>Start Selling</span>
+                  <span>{t('home.startSelling')}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Link>
               <Link href="/marketplace" className="btn-secondary border-white text-white hover:bg-white hover:text-orange-600 group">
                 <span className="flex items-center justify-center space-x-3">
-                  <span>Start Shopping</span>
+                  <span>{t('home.startShopping')}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Link>

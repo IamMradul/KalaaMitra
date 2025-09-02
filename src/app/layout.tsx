@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from 'next/headers'
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -20,13 +21,18 @@ export const metadata: Metadata = {
   description: "Preserving Tradition, Empowering Artisans",
 };
 
-export default function RootLayout({
+// Note: Do not export generateMetadata alongside metadata to avoid Next.js build errors.
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read preferred language from cookies to keep SSR and client in sync
+  const cookieStore = await cookies()
+  const preferredLang = cookieStore.get('preferredLanguage')?.value || 'en'
   return (
-    <html lang="en">
+    <html lang={preferredLang}>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700;900&display=swap" rel="stylesheet" />
       </head>
@@ -46,3 +52,4 @@ export default function RootLayout({
     </html>
   );
 }
+

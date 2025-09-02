@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import AIService, { AIAnalysisResult } from '@/lib/ai-service'
 import { supabase } from '@/lib/supabase'
+import { useTranslation } from 'react-i18next'
 
 interface AIProductFormProps {
   onSubmit: (formData: FormData) => void
@@ -36,6 +37,7 @@ export default function AIProductForm({
   loading = false,
   initialData = {}
 }: AIProductFormProps) {
+  const { t } = useTranslation()
   const [imageUrl, setImageUrl] = useState(initialData.imageUrl || '')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -108,7 +110,7 @@ export default function AIProductForm({
 
   const analyzeImage = async () => {
     if (!imageUrl) {
-      setError('Please provide an image first')
+  setError(t('ai.form.errors.noImage'))
       return
     }
 
@@ -128,7 +130,7 @@ export default function AIProductForm({
         setShowAiResult(true)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze image')
+  setError(err instanceof Error ? err.message : t('ai.form.errors.analyzeFailed'))
     } finally {
       setIsAnalyzing(false)
     }
@@ -136,7 +138,7 @@ export default function AIProductForm({
 
   const generateAd = async () => {
     if (!imageUrl || !aiResult) {
-      setError('Please analyze an image first')
+  setError(t('ai.form.errors.needAnalyzeFirst'))
       return
     }
 
@@ -168,13 +170,13 @@ export default function AIProductForm({
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate ad')
+  throw new Error(t('ai.form.errors.generateFailed'))
       }
 
       const { videoUrl } = await response.json()
       setAdVideoUrl(videoUrl)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate ad')
+  setError(err instanceof Error ? err.message : t('ai.form.errors.generateFailed'))
     } finally {
       setIsGeneratingAd(false)
     }
@@ -220,7 +222,7 @@ export default function AIProductForm({
         console.log('Using existing URL:', imageUrl)
         formData.set('imageUrl', imageUrl)
       } else {
-        setError('Please provide a valid image')
+        setError(t('ai.form.errors.invalidImage'))
         setIsUploading(false)
         return
       }
@@ -236,7 +238,7 @@ export default function AIProductForm({
       onCancel()
     } catch (err) {
       console.error('Error in handleSubmit:', err)
-      setError(err instanceof Error ? err.message : 'Failed to upload image')
+      setError(err instanceof Error ? err.message : t('ai.form.errors.uploadFailed'))
       setIsUploading(false)
     }
   }
@@ -251,7 +253,7 @@ export default function AIProductForm({
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-gray-900 flex items-center">
             <Sparkles className="w-5 h-5 mr-2 text-orange-500" />
-            AI-Powered Product Creation
+            {t('ai.form.title')}
           </h3>
           <button
             onClick={onCancel}
@@ -265,7 +267,7 @@ export default function AIProductForm({
           {/* Image Upload Section */}
           <div className="space-y-4">
             <label className="block text-sm font-medium text-gray-700">
-              Product Image
+              {t('ai.form.productImage')}
             </label>
             
             <div className="flex space-x-3">
@@ -282,16 +284,16 @@ export default function AIProductForm({
                 className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Image
+                {t('ai.form.uploadImage')}
               </button>
-              <span className="text-gray-500 text-sm">or</span>
+              <span className="text-gray-500 text-sm">{t('ai.form.or')}</span>
               <input
                 name="imageUrl"
                 type="url"
                 value={imageUrl}
                 onChange={handleImageUrlChange}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Paste image URL here"
+                placeholder={t('ai.form.pasteImageUrl')}
               />
             </div>
 
@@ -299,7 +301,7 @@ export default function AIProductForm({
               <div className="relative">
                 <img
                   src={imageUrl}
-                  alt="Product preview"
+                  alt={t('ai.form.productPreviewAlt')}
                   className="w-full h-48 object-cover rounded-lg border border-gray-200"
                 />
                 <div className="absolute top-2 right-2 flex space-x-2">
@@ -314,7 +316,7 @@ export default function AIProductForm({
                     ) : (
                       <Camera className="w-4 h-4 mr-2" />
                     )}
-                    {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                    {isAnalyzing ? t('ai.analyzing') : t('ai.analyzeWithAI')}
                   </button>
                   <button
                     type="button"
@@ -327,7 +329,7 @@ export default function AIProductForm({
                     ) : (
                       <Video className="w-4 h-4 mr-2" />
                     )}
-                    {isGeneratingAd ? 'Generating Ad...' : 'Generate Ad with AI'}
+                    {isGeneratingAd ? t('ai.generatingAd') : t('ai.generateAdWithAI')}
                   </button>
                 </div>
               </div>
@@ -338,7 +340,7 @@ export default function AIProductForm({
           {adVideoUrl && (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Generated Ad Preview
+                {t('ai.generatedAdPreview')}
               </label>
               <video
                 src={adVideoUrl}
@@ -360,7 +362,7 @@ export default function AIProductForm({
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-lg font-semibold text-blue-800 flex items-center">
                     <Sparkles className="w-5 h-5 mr-2" />
-                    AI Analysis Results
+                    {t('ai.aiAnalysisResults')}
                   </h4>
                   <button
                     type="button"
@@ -368,7 +370,7 @@ export default function AIProductForm({
                     className="flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
                   >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    Apply to Form
+                    {t('ai.form.applyToForm')}
                   </button>
                 </div>
 
@@ -376,10 +378,10 @@ export default function AIProductForm({
                   <div>
                     <h5 className="font-medium text-blue-700 mb-2 flex items-center">
                       <Tag className="w-4 h-4 mr-1" />
-                      Suggested Title & Category
+                      {t('ai.form.suggestedTitleCategory')}
                     </h5>
-                    <p className="text-blue-800 mb-1"><strong>Title:</strong> {aiResult.title}</p>
-                    <p className="text-blue-800 mb-1"><strong>Category:</strong> {aiResult.category}</p>
+                    <p className="text-blue-800 mb-1"><strong>{t('ai.form.labels.title', { defaultValue: 'Title' })}:</strong> {aiResult.title}</p>
+                    <p className="text-blue-800 mb-1"><strong>{t('ai.form.labels.category', { defaultValue: 'Category' })}:</strong> {aiResult.category}</p>
                     <div className="flex flex-wrap gap-1">
                       {aiResult.tags.map((tag, index) => (
                         <span
@@ -395,17 +397,17 @@ export default function AIProductForm({
                   <div>
                     <h5 className="font-medium text-blue-700 mb-2 flex items-center">
                       <DollarSign className="w-4 h-4 mr-1" />
-                      Pricing Suggestion
+                      {t('ai.pricingSuggestion')}
                     </h5>
                     <p className="text-blue-800 mb-1">
-                      <strong>Range:</strong> ₹{aiResult.pricingSuggestion.minPrice} - ₹{aiResult.pricingSuggestion.maxPrice}
+                      <strong>{t('ai.range')}:</strong> ₹{aiResult.pricingSuggestion.minPrice} - ₹{aiResult.pricingSuggestion.maxPrice}
                     </p>
                     <p className="text-blue-700 text-sm">{aiResult.pricingSuggestion.reasoning}</p>
                   </div>
                 </div>
 
                 <div className="mt-3">
-                  <h5 className="font-medium text-blue-700 mb-2">AI-Generated Description</h5>
+                  <h5 className="font-medium text-blue-700 mb-2">{t('ai.aiGeneratedDescription')}</h5>
                   <p className="text-blue-800 text-sm italic">&ldquo;{aiResult.description}&rdquo;</p>
                 </div>
               </motion.div>
@@ -424,33 +426,33 @@ export default function AIProductForm({
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Product Title *
+                {t('ai.form.fields.title.label')}
               </label>
               <input
                 name="title"
                 required
                 defaultValue={initialData.title}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Enter product title"
+                placeholder={t('ai.form.fields.title.placeholder')}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category *
+                {t('ai.form.fields.category.label')}
               </label>
               <input
                 name="category"
                 required
                 defaultValue={initialData.category}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="e.g., Pottery, Textiles, Jewelry"
+                placeholder={t('ai.form.fields.category.placeholder')}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description *
+              {t('ai.form.fields.description.label')}
             </label>
             <textarea
               name="description"
@@ -458,13 +460,13 @@ export default function AIProductForm({
               rows={4}
               defaultValue={initialData.description}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Describe your product (AI can help enhance this!)"
+              placeholder={t('ai.form.fields.description.placeholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price (₹) *
+              {t('ai.form.fields.price.label')}
             </label>
             <input
               name="price"
@@ -474,7 +476,7 @@ export default function AIProductForm({
               required
               defaultValue={initialData.price}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="0.00"
+              placeholder={t('ai.form.fields.price.placeholder')}
             />
           </div>
 
@@ -485,7 +487,7 @@ export default function AIProductForm({
               onClick={onCancel}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -495,12 +497,12 @@ export default function AIProductForm({
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Uploading Image...
+                  {t('ai.form.uploadingImage')}
                 </>
               ) : loading ? (
-                'Saving...'
+                t('ai.form.saving')
               ) : (
-                'Save Product'
+                t('ai.form.saveProduct')
               )}
             </button>
           </div>
@@ -508,13 +510,13 @@ export default function AIProductForm({
 
         {/* AI Tips */}
         <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <h4 className="text-sm font-medium text-amber-800 mb-2">💡 AI Tips for Artisans</h4>
+          <h4 className="text-sm font-medium text-amber-800 mb-2">💡 {t('ai.tips.title')}</h4>
           <ul className="text-xs text-amber-700 space-y-1">
-            <li>• Upload a clear, well-lit image for better AI analysis</li>
-            <li>• AI can help you avoid underpricing your valuable work</li>
-            <li>• Use AI-generated descriptions as a starting point, then personalize them</li>
-            <li>• Generate a video ad to showcase your product&apos;s unique appeal</li>
-            <li>• Consider the cultural significance and craftsmanship in your pricing</li>
+            <li>• {t('ai.tips.items.uploadClearImage')}</li>
+            <li>• {t('ai.tips.items.avoidUnderpricing')}</li>
+            <li>• {t('ai.tips.items.personalizeDescriptions')}</li>
+            <li>• {t("ai.tips.items.generateVideoAd")}</li>
+            <li>• {t('ai.tips.items.culturalSignificance')}</li>
           </ul>
         </div>
       </motion.div>

@@ -6,6 +6,7 @@ import { Camera, Sparkles, Save, User, Store } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import AIService from '@/lib/ai-service'
 import { Database } from '@/lib/supabase'
+import { useTranslation } from 'react-i18next'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Product = Database['public']['Tables']['products']['Row']
@@ -17,6 +18,7 @@ type Props = {
 }
 
 export default function ProfileManager({ profile, products, onProfileUpdate }: Props) {
+  const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
@@ -87,7 +89,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       setFormData(prev => ({ ...prev, store_description: description }))
     } catch (error) {
       console.error('Failed to generate store description:', error)
-      alert('Failed to generate store description. Please try again.')
+  alert(t('seller.profile.errors.generateDescriptionFailed'))
     } finally {
       setAiLoading(false)
     }
@@ -122,7 +124,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
           imageUrl = await uploadImage(imageFile)
         } catch (uploadError) {
           console.error('Image upload failed:', uploadError)
-          alert(`Image upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}. Profile will be updated without the new image.`)
+          alert(`Image upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}. ${t('seller.profile.aiDescriptionHelp')}`)
           // Continue without the new image
         }
       }
@@ -146,7 +148,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       setImageFile(null)
       
       // Show success message
-      alert('Profile updated successfully!')
+  alert(t('success.profileUpdated'))
     } catch (error) {
       console.error('Failed to update profile:', error)
       alert(`Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -166,7 +168,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       >
         <div className="text-center py-8">
           <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600">{t('seller.profile.loadingProfile')}</p>
         </div>
       </motion.div>
     )
@@ -182,13 +184,13 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center">
           <Store className="w-6 h-6 mr-2 text-orange-600" />
-          Store Profile
+          {t('seller.profile.title')}
         </h2>
         <button
           onClick={() => setIsEditing(!isEditing)}
           className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
         >
-          {isEditing ? 'Cancel' : 'Edit Profile'}
+          {isEditing ? t('seller.profile.cancel') : t('seller.profile.edit')}
         </button>
       </div>
 
@@ -197,7 +199,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">
             <Camera className="w-5 h-5 mr-2 text-orange-600" />
-            Profile Image
+            {t('seller.profile.profileImage')}
           </h3>
           
           <div className="flex items-center space-x-4">
@@ -226,7 +228,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                   onClick={() => fileInputRef.current?.click()}
                   className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Choose Image
+                  {t('seller.profile.chooseImage')}
                 </button>
               </div>
             )}
@@ -235,40 +237,40 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
 
         {/* Profile Details Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Store Details</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('seller.profile.details')}</h3>
           
           {isEditing ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Store Name
+                  {t('seller.profile.fields.storeName.label')}
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  placeholder="Your store name"
+                  placeholder={t('seller.profile.fields.storeName.placeholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bio
+                  {t('seller.profile.fields.bio.label')}
                 </label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  placeholder="Tell us about yourself and your craft..."
+                  placeholder={t('seller.profile.fields.bio.placeholder')}
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-sm font-medium text-gray-700">
-                    Store Description
+                    {t('seller.profile.fields.description.label')}
                   </label>
                   <button
                     onClick={generateStoreDescription}
@@ -276,7 +278,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                     className="flex items-center text-sm text-orange-600 hover:text-orange-700 disabled:opacity-50"
                   >
                     <Sparkles className="w-4 h-4 mr-1" />
-                    {aiLoading ? 'Generating...' : 'AI Generate'}
+                    {aiLoading ? t('seller.profile.generating') : t('seller.profile.aiGenerate')}
                   </button>
                 </div>
                 <textarea
@@ -284,7 +286,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                   onChange={(e) => setFormData(prev => ({ ...prev, store_description: e.target.value }))}
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  placeholder="A compelling description of your store that will appear on your stall page..."
+                  placeholder={t('seller.profile.fields.description.placeholder')}
                 />
               </div>
 
@@ -294,30 +296,30 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                 className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center justify-center"
               >
                 <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? t('seller.profile.saving') : t('seller.profile.saveChanges')}
               </button>
             </div>
           ) : (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Store Name
+                  {t('seller.profile.fields.storeName.label')}
                 </label>
-                <p className="text-gray-900">{formData.name || 'Not set'}</p>
+                <p className="text-gray-900">{formData.name || t('seller.profile.notSet')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bio
+                  {t('seller.profile.fields.bio.label')}
                 </label>
-                <p className="text-gray-900">{formData.bio || 'No bio added yet'}</p>
+                <p className="text-gray-900">{formData.bio || t('seller.profile.noBio')}</p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Store Description
+                  {t('seller.profile.fields.description.label')}
                 </label>
-                <p className="text-gray-900">{formData.store_description || 'No store description added yet'}</p>
+                <p className="text-gray-900">{formData.store_description || t('seller.profile.noDescription')}</p>
               </div>
             </div>
           )}
@@ -329,10 +331,9 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
           <div className="flex items-start">
             <Sparkles className="w-5 h-5 text-orange-600 mr-2 mt-0.5" />
             <div>
-              <h4 className="text-sm font-semibold text-orange-800 mb-1">AI-Powered Store Description</h4>
+              <h4 className="text-sm font-semibold text-orange-800 mb-1">{t('seller.profile.aiDescriptionTitle')}</h4>
               <p className="text-sm text-orange-700">
-                Use our AI to generate a compelling store description based on your products and bio. 
-                This will help attract more customers to your stall!
+                {t('seller.profile.aiDescriptionHelp')}
               </p>
             </div>
           </div>

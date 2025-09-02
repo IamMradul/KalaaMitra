@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import AIService, { type SellerAnalyticsSnapshot } from '@/lib/ai-service'
+import { useTranslation } from 'react-i18next'
 
 type Props = { sellerId: string }
 
 export default function SellerAnalytics({ sellerId }: Props) {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [totalViews, setTotalViews] = useState(0)
   const [uniqueVisitors, setUniqueVisitors] = useState(0)
@@ -86,11 +88,11 @@ export default function SellerAnalytics({ sellerId }: Props) {
         } catch {
           if (top.length > 0) {
             const topTitles = top.map(t => t.title).join(', ')
-            setGuidance(`Your audience is engaging most with: ${topTitles}. Consider featuring these items, creating bundles, or promoting similar pieces in the same categories.`)
+            setGuidance(t('seller.analyticsGuidance.audienceEngagingMost', { titles: topTitles }))
           } else if (totalViews === 0) {
-            setGuidance('No recent visits yet. Share your stall link and add detailed images and descriptions to attract interest.')
+            setGuidance(t('seller.analyticsGuidance.noRecentVisits'))
           } else {
-            setGuidance('Views are starting to come in. Keep products updated with clear photos and keywords to improve discovery.')
+            setGuidance(t('seller.analyticsGuidance.viewsStarting'))
           }
         }
       } finally {
@@ -101,23 +103,23 @@ export default function SellerAnalytics({ sellerId }: Props) {
   }, [sellerId])
 
   if (loading) {
-    return <div className="text-gray-600">Loading analytics…</div>
+    return <div className="text-gray-600">{t('seller.analyticsShort.loading')}</div>
   }
 
   return (
     <div className="grid md:grid-cols-3 gap-6">
       <div className="bg-white rounded-lg border p-4">
-        <div className="text-sm text-gray-500">Stall views (30d)</div>
+        <div className="text-sm text-gray-500">{t('seller.analyticsShort.stallViews30d')}</div>
         <div className="text-3xl font-bold text-gray-900">{totalViews}</div>
       </div>
       <div className="bg-white rounded-lg border p-4">
-        <div className="text-sm text-gray-500">Unique visitors (30d)</div>
+        <div className="text-sm text-gray-500">{t('seller.analyticsShort.uniqueVisitors30d')}</div>
         <div className="text-3xl font-bold text-gray-900">{uniqueVisitors}</div>
       </div>
       <div className="bg-white rounded-lg border p-4 md:col-span-1">
-        <div className="text-sm text-gray-500 mb-2">Top products (30d)</div>
+        <div className="text-sm text-gray-500 mb-2">{t('seller.analyticsShort.topProducts30d')}</div>
         {topProducts.length === 0 ? (
-          <div className="text-gray-600">No product views yet</div>
+          <div className="text-gray-600">{t('seller.analyticsShort.noProductViewsYet')}</div>
         ) : (
           <ul className="space-y-1">
             {topProducts.map(p => (
@@ -133,7 +135,7 @@ export default function SellerAnalytics({ sellerId }: Props) {
         <div className="flex items-start">
           <div className="mr-3 text-orange-600 text-xl">💡</div>
           <div>
-            <div className="text-sm font-semibold text-orange-700 mb-1">Tips</div>
+            <div className="text-sm font-semibold text-orange-700 mb-1">{t('seller.analyticsShort.tipsTitle')}</div>
             {toBullets(guidance).length > 1 ? (
               <ul className="list-disc list-inside space-y-1 text-gray-800">
                 {toBullets(guidance).map((item, idx) => (
@@ -146,12 +148,12 @@ export default function SellerAnalytics({ sellerId }: Props) {
           </div>
         </div>
         <div className="mt-4 pt-3 border-t border-orange-100">
-          <div className="text-sm font-semibold text-orange-700 mb-2">Ask for more tips</div>
+          <div className="text-sm font-semibold text-orange-700 mb-2">{t('seller.analyticsShort.askMoreTips')}</div>
           <div className="flex gap-2">
             <input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask a question about improving your stall…"
+              placeholder={t('seller.analyticsShort.askPlaceholder')}
               className="flex-1 px-3 py-2 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
             />
             <button
@@ -173,7 +175,7 @@ export default function SellerAnalytics({ sellerId }: Props) {
               }}
               className="px-4 py-2 bg-orange-600 text-white rounded-lg disabled:opacity-50"
             >
-              {qaLoading ? 'Thinking…' : 'Ask'}
+              {qaLoading ? t('seller.analyticsShort.thinking') : t('seller.analyticsShort.askButton')}
             </button>
           </div>
           {answer && (

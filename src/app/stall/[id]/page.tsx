@@ -9,11 +9,13 @@ import { ArrowLeft, User, Palette, MapPin, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
 
 export default function StallPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const { user } = useAuth()
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
@@ -77,12 +79,12 @@ export default function StallPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Stall not found</p>
+          <p className="text-gray-600 mb-4">{t('errors.notFound')}</p>
           <Link
             href="/marketplace"
             className="text-orange-600 hover:text-orange-700 font-medium"
           >
-            Back to Marketplace
+            {t('marketplace.backToMarketplace')}
           </Link>
         </div>
       </div>
@@ -104,7 +106,7 @@ export default function StallPage() {
             className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Marketplace
+            {t('marketplace.backToMarketplace')}
           </Link>
         </motion.div>
 
@@ -128,7 +130,7 @@ export default function StallPage() {
           </div>
           
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {stallProfile.name}&apos;s Stall
+            {stallProfile.name}&apos;s {t('navigation.profile')}
           </h1>
           
           {stallProfile.store_description && (
@@ -146,11 +148,11 @@ export default function StallPage() {
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
             <div className="flex items-center">
               <MapPin className="w-4 h-4 mr-2" />
-              <span>Online Store</span>
+              <span>{t('navigation.dashboard')}</span>
             </div>
             <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-2" />
-              <span>Member since {new Date(stallProfile.created_at).getFullYear()}</span>
+              <span>{t('profile.memberSince', { defaultValue: 'Member since' })} {new Date(stallProfile.created_at).getFullYear()}</span>
             </div>
           </div>
         </motion.div>
@@ -163,18 +165,18 @@ export default function StallPage() {
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Products by {stallProfile.name}
+              {t('marketplace.title')} - {stallProfile.name}
             </h2>
             <span className="text-gray-600">
-              {products.length} product{products.length !== 1 ? 's' : ''}
+              {products.length} {products.length !== 1 ? t('product.relatedProducts').toLowerCase() : t('product.item', { defaultValue: 'item' })}
             </span>
           </div>
 
           {products.length === 0 ? (
             <div className="text-center py-12 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200">
               <Palette className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No products available yet</p>
-              <p className="text-gray-400">Check back later for new creations</p>
+              <p className="text-gray-500 text-lg">{t('marketplace.noProducts')}</p>
+              <p className="text-gray-400">{t('marketplace.noProductsDescription')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -226,7 +228,7 @@ export default function StallPage() {
           className="mt-12 bg-white/80 backdrop-blur-sm rounded-xl p-8 border border-orange-200"
         >
           <h3 className="text-2xl font-semibold text-gray-900 mb-4 text-center">
-            About the Artisan
+            {t('product.meetTheArtisan')}
           </h3>
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-gray-600 leading-relaxed mb-6">
@@ -237,11 +239,11 @@ export default function StallPage() {
             <div className="flex justify-center space-x-6 text-sm text-gray-500">
               <div className="flex items-center">
                 <Palette className="w-4 h-4 mr-2" />
-                <span>Handcrafted with love</span>
+                <span>{t('seller.overview', { defaultValue: 'Business Overview' })}</span>
               </div>
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2" />
-                <span>Traditional techniques</span>
+                <span>{t('product.artisanInfo')}</span>
               </div>
             </div>
           </div>

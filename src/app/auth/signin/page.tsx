@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function SignIn() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -35,7 +37,7 @@ export default function SignIn() {
 
     // Basic validation
     if (!email.trim() || !password.trim()) {
-      setError('Please enter both email and password.')
+      setError(t('auth.errors.missingEmailPassword'))
       setLoading(false)
       return
     }
@@ -57,7 +59,7 @@ export default function SignIn() {
           console.log('Error stack:', error.stack)
         }
       } else {
-        setError('An unexpected error occurred. Please try again.')
+        setError(t('errors.general'))
       }
       
       // Clear password field on error for security
@@ -80,7 +82,7 @@ export default function SignIn() {
       if (error instanceof Error) {
         setError(error.message)
       } else {
-        setError('Google sign in failed. Please try again.')
+        setError(t('auth.googleSignInFailed'))
       }
     } finally {
       setGoogleLoading(false)
@@ -95,10 +97,10 @@ export default function SignIn() {
             <span className="text-white font-bold text-xl">KM</span>
           </div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Welcome Back
+            {t('auth.welcomeBack')}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to your KalaMitra account
+            {t('auth.signinSubtitle')}
           </p>
         </div>
 
@@ -113,7 +115,7 @@ export default function SignIn() {
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                {t('auth.emailAddress')}
               </label>
               <input
                 id="email"
@@ -124,13 +126,13 @@ export default function SignIn() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                placeholder="Enter your email"
+                placeholder={t('auth.enterYourEmail')}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <input
@@ -142,7 +144,7 @@ export default function SignIn() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-10"
-                  placeholder="Enter your password"
+                  placeholder={t('auth.enterYourPassword')}
                 />
                 <button
                   type="button"
@@ -161,7 +163,7 @@ export default function SignIn() {
               disabled={loading}
               className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? t('auth.signingIn') : t('navigation.signin')}
             </button>
 
             <div className="relative">
@@ -169,7 +171,7 @@ export default function SignIn() {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">{t('auth.orContinueWith')}</span>
               </div>
             </div>
 
@@ -185,19 +187,19 @@ export default function SignIn() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              {googleLoading ? 'Signing In...' : 'Sign in with Google'}
+              {googleLoading ? t('auth.signingIn') : t('auth.signinWithGoogle')}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don&apos;t have an account?{' '}
+              {t('auth.dontHaveAccount')}{' '}
               <Link href="/auth/signup" className="font-medium text-orange-600 hover:text-orange-500">
-                Sign up here
+                {t('navigation.signup')}
               </Link>
             </p>
             <p className="text-xs text-gray-500 mt-2">
-              💡 You can also use Google sign-in if you have an existing account with the same email
+              💡 {t('auth.chooseRoleTip')}
             </p>
           </div>
         </form>
@@ -206,12 +208,12 @@ export default function SignIn() {
         {showRoleModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Your Role</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('auth.chooseRoleTitle')}</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Select how you want to use KalaMitra with your Google account
+                {t('auth.chooseRoleSubtitle')}
               </p>
               <p className="text-xs text-blue-600 mb-6 bg-blue-50 p-2 rounded">
-                💡 If you have an existing account with the same email, you&apos;ll be signed in automatically
+                💡 {t('auth.chooseRoleTip')}
               </p>
               
               <div className="space-y-3">
@@ -223,7 +225,7 @@ export default function SignIn() {
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                   </svg>
-                  Continue as Buyer
+                  {t('auth.continueAsBuyer')}
                 </button>
                 
                 <button
@@ -234,7 +236,7 @@ export default function SignIn() {
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z" />
                   </svg>
-                  Continue as Artisan
+                  {t('auth.continueAsArtisan')}
                 </button>
               </div>
               
@@ -242,7 +244,7 @@ export default function SignIn() {
                 onClick={() => setShowRoleModal(false)}
                 className="w-full mt-4 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>

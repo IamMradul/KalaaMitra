@@ -11,6 +11,7 @@ import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type ProductBase = Database['public']['Tables']['products']['Row']
 type ProductWithFeatures = ProductBase & {
@@ -26,8 +27,9 @@ type Product = ProductBase & {
 }
 
 export default function Marketplace() {
+  const { t } = useTranslation()
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div><p className="text-gray-600">Loading...</p></div></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-center"><div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div><p className="text-gray-600">{t('common.loading')}</p></div></div>}>
       <MarketplaceContent />
     </Suspense>
   )
@@ -35,6 +37,7 @@ export default function Marketplace() {
 
 function MarketplaceContent() {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
@@ -288,7 +291,7 @@ function MarketplaceContent() {
 
   const addToCart = async (productId: string) => {
     // TODO: Implement cart functionality
-    alert('Cart functionality coming soon!')
+  alert(t('cart.comingSoon'))
   }
 
   if (loading) {
@@ -314,10 +317,10 @@ function MarketplaceContent() {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold heritage-title mb-4">
-            Artisan Marketplace
+            {t('marketplace.title')}
           </h1>
           <p className="text-lg text-[var(--heritage-brown)]">
-            Discover unique handcrafted treasures from talented artisans
+            {t('marketplace.subtitle')}
           </p>
         </motion.div>
 
@@ -334,7 +337,7 @@ function MarketplaceContent() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search products, categories, or artisans..."
+                placeholder={t('marketplace.searchInputPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -349,7 +352,7 @@ function MarketplaceContent() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white"
               >
-                <option value="">All Categories</option>
+                <option value="">{t('marketplace.allCategories')}</option>
                 {categories.map((category) => (
                   <option key={category} value={category}>
                     {category}
@@ -366,11 +369,11 @@ function MarketplaceContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          {filteredProducts.length === 0 ? (
+      {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No products found</p>
-              <p className="text-gray-400">Try adjusting your search or filters</p>
+        <p className="text-gray-500 text-lg">{t('marketplace.noProducts')}</p>
+        <p className="text-gray-400">{t('marketplace.noProductsDescription')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -406,7 +409,7 @@ function MarketplaceContent() {
                     </Link>
                     
                     <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-                    <p className="text-xs text-gray-500 mb-3">by {product.seller?.name || 'Unknown Artisan'}</p>
+                    <p className="text-xs text-gray-500 mb-3">{t('product.byAuthor', { name: product.seller?.name || t('product.unknownArtisan') })}</p>
                     
                     <div className="flex items-center justify-between">
                       <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
@@ -414,13 +417,13 @@ function MarketplaceContent() {
                         <button
                           onClick={() => addToCart(product.id)}
                           className="p-2 bg-orange-100 text-orange-600 rounded-full hover:bg-orange-200 transition-colors"
-                          title="Add to Cart"
+                          title={t('product.addToCart')}
                         >
                           <ShoppingCart className="w-4 h-4" />
                         </button>
                         <button
                           className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
-                          title="Add to Wishlist"
+                          title={t('product.addToWishlist')}
                         >
                           <Heart className="w-4 h-4" />
                         </button>
@@ -440,7 +443,7 @@ function MarketplaceContent() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-8 text-center text-gray-600"
         >
-          Showing {filteredProducts.length} of {products.length} products
+          {t('marketplace.resultsCount', { count: filteredProducts.length, total: products.length })}
         </motion.div>
 
         {/* Recommendations */}
@@ -452,7 +455,7 @@ function MarketplaceContent() {
             className="mt-12"
           >
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Because you viewed similar products
+              {t('marketplace.becauseViewedSimilar')}
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl-grid-cols-4 gap-6">
               {recommended.map((product) => (

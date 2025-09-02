@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion } from 'framer-motion'
@@ -18,6 +19,7 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 
 export default function SellerDashboard() {
   const { user, profile, loading, signOut } = useAuth()
+  const { t } = useTranslation()
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
   const [showAIProductForm, setShowAIProductForm] = useState(false)
@@ -471,12 +473,8 @@ export default function SellerDashboard() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Seller Dashboard
-          </h1>
-          <p className="text-lg text-gray-600">
-            Manage your virtual stall and products
-          </p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('seller.title')}</h1>
+          <p className="text-lg text-gray-600">{t('seller.subtitle')}</p>
           
           {/* Debug Info */}
           <div className="mt-4 p-3 bg-gray-100 rounded-lg text-sm text-gray-600">
@@ -513,35 +511,31 @@ export default function SellerDashboard() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
         >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">{t('seller.quickActions')}</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">Product Management</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">{t('seller.productManagement')}</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => setShowAIProductForm(true)}
                   className="w-full flex items-center justify-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Add Product with AI
+                  {t('seller.addProductWithAI')}
                 </button>
-                <div className="text-xs text-gray-600 text-center">
-                  Upload an image to get AI-generated descriptions and pricing suggestions
-                </div>
+                <div className="text-xs text-gray-600 text-center">{t('seller.addProductHint')}</div>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">View Your Stall</h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">{t('seller.viewYourStall')}</h3>
               <Link
                 href={`/stall/${user.id}`}
                 className="inline-flex items-center justify-center w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                View Public Stall
+                {t('seller.viewPublicStall')}
               </Link>
-              <div className="text-xs text-gray-600 text-center mt-2">
-                See how customers view your stall and products
-              </div>
+              <div className="text-xs text-gray-600 text-center mt-2">{t('seller.viewStallHint')}</div>
             </div>
           </div>
         </motion.div>
@@ -553,7 +547,7 @@ export default function SellerDashboard() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
         >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Stall Analytics (last 30 days)</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">{t('seller.analyticsTitle')}</h2>
           <SellerAnalytics sellerId={user.id} />
         </motion.div>
 
@@ -565,14 +559,14 @@ export default function SellerDashboard() {
           className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-orange-200"
         >
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">Your Products</h2>
+      <h2 className="text-2xl font-semibold text-gray-900">{t('seller.yourProducts')}</h2>
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowAIProductForm(true)}
                 className="flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                Add Product with AI
+        {t('seller.addProductWithAI')}
               </button>
               <button
                 onClick={() => {
@@ -583,7 +577,7 @@ export default function SellerDashboard() {
                 className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+        {t('navigation.signout')}
               </button>
             </div>
           </div>
@@ -595,13 +589,13 @@ export default function SellerDashboard() {
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full mx-auto mb-4"
               />
-              <p className="text-gray-500 text-lg">Loading products...</p>
+              <p className="text-gray-500 text-lg">{t('seller.loadingProducts')}</p>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-12">
               <Palette className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No products yet</p>
-              <p className="text-gray-400">Start by adding your first product</p>
+              <p className="text-gray-500 text-lg">{t('seller.noProducts')}</p>
+              <p className="text-gray-400">{t('seller.startByAddingFirst')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -635,14 +629,14 @@ export default function SellerDashboard() {
                         className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Edit
+                        {t('common.edit')}
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(product.id)}
                         className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
+                        {t('common.delete')}
                       </button>
                     </div>
                   </div>
