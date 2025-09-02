@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({ q: toTrans.map(t => t.text), target, format: 'text' }),
         })
         if (resp.ok) {
-          const data = await resp.json()
-          const translations: string[] = (data?.data?.translations || []).map((t: any) => String(t?.translatedText || ''))
+          const data = await resp.json() as { data?: { translations?: Array<{ translatedText?: string }> } }
+          const translations: string[] = (data?.data?.translations || []).map((t) => String(t?.translatedText || ''))
           translations.forEach((tr, i) => {
             const original = toTrans[i]?.text
             const key = `${target}::${original}`
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     // Nothing configured; return originals
     return NextResponse.json({ translations: items }, { status: 200 })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Bad request' }, { status: 400 })
   }
 }

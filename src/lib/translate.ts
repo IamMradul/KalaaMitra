@@ -133,8 +133,8 @@ async function translateWithGoogle(texts: string[], target: string): Promise<str
       body: JSON.stringify({ q: texts, target }),
     })
     if (!resp.ok) return null
-    const data = await resp.json()
-    const translations: string[] = (data?.translations || []).map((t: any) => htmlUnescape(String(t ?? '')))
+  const data = await resp.json() as { translations?: string[] }
+  const translations: string[] = (data?.translations || []).map((t) => htmlUnescape(String(t ?? '')))
     return translations
   } catch {
     return null
