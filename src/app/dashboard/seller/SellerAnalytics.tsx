@@ -213,8 +213,8 @@ export default function SellerAnalytics({ sellerId }: Props) {
                     } catch {
                       setAnswer(tips)
                     }
-                  } catch (err: any) {
-                    const msg = String(err?.message || err || '')
+                  } catch (err: unknown) {
+                    const msg = err instanceof Error ? err.message : String(err ?? '')
                     if (msg.includes('429') || msg.toLowerCase().includes('quota')) {
                       setQuotaCooldownUntil(Date.now() + 60_000)
                       setAnswer(t('seller.analyticsShort.limitReached', { defaultValue: 'Daily AI limit reached. Please try again later.' }))
