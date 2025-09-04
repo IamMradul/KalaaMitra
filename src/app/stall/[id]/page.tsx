@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/components/LanguageProvider'
 import { translateArray, translateText } from '@/lib/translate'
 
 type Product = Database['public']['Tables']['products']['Row']
@@ -17,6 +18,7 @@ type Profile = Database['public']['Tables']['profiles']['Row']
 
 export default function StallPage() {
   const { t, i18n } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const params = useParams()
   const { user } = useAuth()
   const [stallProfile, setStallProfile] = useState<Profile | null>(null)
@@ -27,7 +29,7 @@ export default function StallPage() {
     if (params.id) {
       fetchStallData(params.id as string)
     }
-  }, [params.id, i18n.language])
+  }, [params.id, currentLanguage])
 
   useEffect(() => {
     if (user && params.id) {
@@ -47,7 +49,7 @@ export default function StallPage() {
       if (profileError) throw profileError
       // Translate profile name/bio/description
       try {
-        const lang = i18n.language
+        const lang = currentLanguage
         const name = await translateText(profileData.name || '', lang)
         const bio = await translateText(profileData.bio || '', lang)
         const desc = await translateText(profileData.store_description || '', lang)
@@ -66,7 +68,7 @@ export default function StallPage() {
       if (productsError) throw productsError
       // Translate product titles and categories in this stall
       try {
-        const lang = i18n.language
+        const lang = currentLanguage
         const titles = (productsData || []).map(p => p.title || '')
         const cats = (productsData || []).map(p => p.category || '')
         const trTitles = await translateArray(titles, lang)

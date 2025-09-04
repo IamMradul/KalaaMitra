@@ -2,10 +2,12 @@
 import Link from 'next/link'
 import { ArrowRight, Palette, ShoppingBag, Users, Shield, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/components/LanguageProvider'
 import { useEffect, useState } from 'react'
 
 export default function Home() {
   const { t } = useTranslation();
+  const { currentLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function Home() {
             </div>
             {/* Main Title */}
             <h1 className="text-6xl md:text-8xl font-bold heritage-title mb-8 leading-tight animate-slide-in-up animate-delay-100">
-              {t('home.welcome')} <span className="heritage-title">{t('brand.name')}</span>
+              {t('home.welcome')} <span className="heritage-title" key={`home-brand-${currentLanguage}`}>{t('brand.name')}</span>
             </h1>
             {/* Subtitle */}
             <p className="text-lg text-[var(--heritage-brown)] mb-8">
@@ -88,7 +90,7 @@ export default function Home() {
         <div className="container-custom relative">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 animate-slide-in-up">
-              {t('home.whyChoose')} <span className="gradient-text-animated">{t('brand.name')}</span>?
+              {t('home.whyChoose')} <span className="gradient-text-animated" key={`why-choose-brand-${currentLanguage}`}>{t('brand.name')}</span>?
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-slide-in-up animate-delay-100">
               {t('home.whyChooseDesc')}

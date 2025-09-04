@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import AIService, { type SellerAnalyticsSnapshot } from '@/lib/ai-service'
 import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/components/LanguageProvider'
 import { translateArray, translateText } from '@/lib/translate'
 
 type Props = { sellerId: string }
 
 export default function SellerAnalytics({ sellerId }: Props) {
   const { t, i18n } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [totalViews, setTotalViews] = useState(0)
   const [uniqueVisitors, setUniqueVisitors] = useState(0)
@@ -79,7 +81,7 @@ export default function SellerAnalytics({ sellerId }: Props) {
           .map(([id, views]) => ({ id, views, title: (sellerProducts || []).find(p => p.id === id)?.title || 'Untitled' }))
         // Translate top product titles for display
         try {
-          const lang = i18n.language
+          const lang = currentLanguage
           const titles = top.map(t => t.title)
           const tr = await translateArray(titles, lang)
           top = top.map((p, idx) => ({ ...p, title: tr[idx] || p.title }))
@@ -98,7 +100,7 @@ export default function SellerAnalytics({ sellerId }: Props) {
           setRawGuidance(tips)
           // Translate AI tips text
           try {
-            const tr = await translateText(tips, i18n.language)
+            const tr = await translateText(tips, currentLanguage)
             setGuidance(tr)
           } catch {
             setGuidance(tips)
@@ -125,14 +127,14 @@ export default function SellerAnalytics({ sellerId }: Props) {
     const run = async () => {
       if (!rawGuidance) return
       try {
-        const tr = await translateText(rawGuidance, i18n.language)
+        const tr = await translateText(rawGuidance, currentLanguage)
         setGuidance(tr)
       } catch {
         setGuidance(rawGuidance)
       }
     }
     run()
-  }, [i18n.language, rawGuidance])
+  }, [currentLanguage, rawGuidance])
 
   if (loading) {
     return <div className="text-gray-600">{t('seller.analyticsShort.loading')}</div>
@@ -208,7 +210,7 @@ export default function SellerAnalytics({ sellerId }: Props) {
                     const tips = await ai.answerSellerQuestion(snapshot, question)
                     // Translate Q&A answer
                     try {
-                      const tr = await translateText(tips, i18n.language)
+                      const tr = await translateText(tips, currentLanguage)
                       setAnswer(tr)
                     } catch {
                       setAnswer(tips)

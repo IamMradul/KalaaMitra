@@ -23,6 +23,20 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     // Initialize language from various sources
     const initializeLanguage = async () => {
       try {
+        // Wait for i18n to be ready
+        if (!i18n.isInitialized) {
+          await new Promise(resolve => {
+            const checkReady = () => {
+              if (i18n.isInitialized) {
+                resolve(true)
+              } else {
+                setTimeout(checkReady, 100)
+              }
+            }
+            checkReady()
+          })
+        }
+
         // Check for language in URL params first
         const urlParams = new URLSearchParams(window.location.search)
         const urlLang = urlParams.get('lang')

@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/components/LanguageProvider'
 import { translateArray } from '@/lib/translate'
 
 type ProductBase = Database['public']['Tables']['products']['Row']
@@ -39,6 +40,7 @@ export default function Marketplace() {
 function MarketplaceContent() {
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
@@ -124,7 +126,7 @@ function MarketplaceContent() {
   useEffect(() => {
     const applyDisplayTranslations = async () => {
       try {
-        const lang = i18n.language
+        const lang = currentLanguage
         if (!products?.length) {
           setDisplayProducts([])
           // Translate categories directly for stable mapping
@@ -167,7 +169,7 @@ function MarketplaceContent() {
       }
     }
     applyDisplayTranslations()
-  }, [products, categories, i18n.language])
+  }, [products, categories, currentLanguage])
 
   // Translate recommended list for display
   useEffect(() => {
@@ -187,7 +189,7 @@ function MarketplaceContent() {
       }
     }
     applyDisplayTranslations()
-  }, [recommended, i18n.language])
+  }, [recommended, currentLanguage])
 
 
   // Debounced search logging

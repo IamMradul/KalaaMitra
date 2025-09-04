@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import TranslationDebug from "@/components/TranslationDebug";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default async function RootLayout({
               </main>
               <Footer />
             </div>
+            <TranslationDebug />
           </LanguageProvider>
         </AuthProvider>
       </body>

@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/components/LanguageProvider'
 import { translateText } from '@/lib/translate'
 
 type Product = Database['public']['Tables']['products']['Row'] & {
@@ -23,6 +24,7 @@ type Product = Database['public']['Tables']['products']['Row'] & {
 
 export default function ProductDetail() {
   const { t, i18n } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
@@ -34,7 +36,7 @@ export default function ProductDetail() {
     if (params.id) {
       fetchProduct(params.id as string)
     }
-  }, [params.id, i18n.language])
+  }, [params.id, currentLanguage])
 
   useEffect(() => {
     if (user && product?.id) {
@@ -55,7 +57,7 @@ export default function ProductDetail() {
 
       if (error) throw error
       // Translate dynamic fields to current language (client-side)
-      const lang = i18n.language
+      const lang = currentLanguage
       const translated = { ...data }
       translated.title = await translateText(data.title || '', lang)
       translated.category = await translateText(data.category || '', lang)

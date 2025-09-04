@@ -50,9 +50,9 @@ export default function Navbar() {
   // Translate user name when profile or language changes
   useEffect(() => {
     const translateUserName = async () => {
-      if (profile?.name && i18n.language) {
+      if (profile?.name && currentLanguage) {
         try {
-          const translated = await translateText(profile.name, i18n.language)
+          const translated = await translateText(profile.name, currentLanguage)
           setTranslatedName(translated)
         } catch {
           setTranslatedName(profile.name)
@@ -62,7 +62,7 @@ export default function Navbar() {
       }
     }
     translateUserName()
-  }, [profile?.name, i18n.language])
+  }, [profile?.name, currentLanguage])
 
   // Prevent hydration mismatch by showing consistent structure during loading
   if (!mounted) {
@@ -109,7 +109,9 @@ export default function Navbar() {
             <div className="w-14 h-14 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-red)] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-medium hover:shadow-glow animate-float-slow border-2 border-heritage-gold">
               <Palette className="w-7 h-7 text-white" />
             </div>
-              <span className="text-3xl font-bold heritage-title">{t('brand.name')}</span>
+              <span className="text-3xl font-bold heritage-title" key={`brand-${currentLanguage}`}>
+                {t('brand.name')}
+              </span>
           </Link>
 
           {/* Desktop Navigation */}

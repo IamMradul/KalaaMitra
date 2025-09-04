@@ -1,10 +1,12 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/components/LanguageProvider'
 import '@/lib/i18n'
 
 export default function Footer() {
   const { t } = useTranslation()
+  const { currentLanguage } = useLanguage()
   const [mounted, setMounted] = useState(false)
 
   // Avoid hydration mismatches by rendering a stable placeholder until mounted
@@ -27,7 +29,9 @@ export default function Footer() {
               <div className="w-12 h-12 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-red)] rounded-2xl flex items-center justify-center shadow-medium hover:shadow-glow transition-all duration-300 hover:scale-110 border-2 border-heritage-gold">
                 <span className="text-white font-bold text-lg">KM</span>
               </div>
-              <span className="text-3xl font-bold heritage-title">{t('brand.name')}</span>
+              <span className="text-3xl font-bold heritage-title" key={`footer-brand-${currentLanguage}`}>
+                {t('brand.name')}
+              </span>
             </div>
             <p className="text-gray-600 text-lg mb-6 max-w-md leading-relaxed">
               {t('footer.tagline')}
