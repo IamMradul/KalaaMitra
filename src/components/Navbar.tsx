@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/components/LanguageProvider'
 import { ShoppingCart, LogOut, Menu, X, Palette } from 'lucide-react'
 import { useTranslation } from 'react-i18next';
 import { translateText } from '@/lib/translate';
@@ -10,6 +11,7 @@ import '@/lib/i18n';
 
 export default function Navbar() {
   const { user, profile, signOut, loading } = useAuth()
+  const { currentLanguage, changeLanguage, isLoading: languageLoading } = useLanguage()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [translatedName, setTranslatedName] = useState('')
@@ -95,12 +97,7 @@ export default function Navbar() {
 
   // Language change handler
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    i18n.changeLanguage(e.target.value);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('preferredLanguage', e.target.value);
-  // Persist language to cookie so server can read it
-  document.cookie = `preferredLanguage=${e.target.value}; path=/; max-age=${60 * 60 * 24 * 365}`;
-    }
+    changeLanguage(e.target.value);
   };
 
   return (
@@ -181,8 +178,9 @@ export default function Navbar() {
             {/* Language Selector */}
             <select
               className="ml-4 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-heritage-gold"
-              value={i18n.language}
+              value={currentLanguage}
               onChange={handleLanguageChange}
+              disabled={languageLoading}
               aria-label="Select language"
             >
               {languages.map((lang) => (
@@ -276,8 +274,9 @@ export default function Navbar() {
                 <select
                   id="mobile-language"
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-heritage-gold"
-                  value={i18n.language}
+                  value={currentLanguage}
                   onChange={handleLanguageChange}
+                  disabled={languageLoading}
                   aria-label="Select language"
                 >
                   {languages.map((lang) => (

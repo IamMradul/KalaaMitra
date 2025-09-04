@@ -54,26 +54,26 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-  lng: (() => {
-      if (typeof window !== 'undefined') {
-    // Prefer SSR-provided html lang to ensure hydration consistency
-    const htmlLang = document.documentElement.getAttribute('lang')
-    if (htmlLang) return htmlLang
-    // Then prefer cookie so SSR and client can align on refresh
-    const match = document.cookie.match(/(?:^|; )preferredLanguage=([^;]+)/)
-    if (match) return decodeURIComponent(match[1])
-    // Finally, fall back to localStorage
-    const ls = localStorage.getItem('preferredLanguage')
-    if (ls) return ls
-      }
-      return 'en'
-    })(),
+    lng: 'en', // Default language
     fallbackLng: 'en',
+    debug: process.env.NODE_ENV === 'development',
     interpolation: {
       escapeValue: false,
     },
     react: {
       useSuspense: false,
+    },
+    // Better production support
+    detection: {
+      order: ['cookie', 'localStorage', 'navigator', 'htmlTag'],
+      caches: ['cookie', 'localStorage'],
+      cookieMinutes: 60 * 24 * 365, // 1 year
+      cookieDomain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost',
+      cookieOptions: {
+        path: '/',
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      },
     },
   });
 
