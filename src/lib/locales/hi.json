@@ -24,6 +24,7 @@
   "navigation": {
     "home": "होम",
     "marketplace": "मार्केटप्लेस",
+  "auctions": "नीलामी",
     "dashboard": "डैशबोर्ड",
     "cart": "कार्ट",
     "profile": "प्रोफ़ाइल",
@@ -31,6 +32,7 @@
     "signup": "साइन अप करें",
     "signout": "साइन आउट करें",
     "language": "भाषा"
+  ,"live": "लाइव"
   },
   "auth": {
     "welcome": "कलामित्र में आपका स्वागत है",
@@ -133,6 +135,24 @@
   "notFound": "उत्पाद नहीं मिला",
   "meetTheArtisan": "कारीगर से मिलें",
   "viewAllProducts": "सभी उत्पाद देखें"
+  },
+  "auction": {
+    "title": "नीलामी",
+    "noAuction": "कोई नीलामी उपलब्ध नहीं",
+    "invalidAmount": "अमान्य बोली राशि",
+    "ended": "समाप्त",
+    "bidTooLow": "आपकी बोली वर्तमान बोली से अधिक होनी चाहिए",
+    "bidFailed": "बोली लगाने में विफल",
+    "status": "स्थिति",
+    "currentBid": "वर्तमान बोली",
+    "enterBid": "अपनी बोली दर्ज करें",
+    "placeBid": "बोली लगाएँ",
+    "recentBids": "हाल की बोलियाँ",
+    "onAuction": "नीलामी पर",
+    "created": "नीलामी बनाई गई",
+    "endedWithWinner": "नीलामी समाप्त। विजेता: {{name}} ₹{{amount}} के साथ",
+    "endedNoBids": "कोई बोलियाँ नहीं मिलीं",
+    "deleted": "नीलामी हटाई गई"
   },
   "cart": {
     "title": "शॉपिंग कार्ट",

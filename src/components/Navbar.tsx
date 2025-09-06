@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/components/LanguageProvider'
-import { ShoppingCart, LogOut, Menu, X, Palette } from 'lucide-react'
+import { ShoppingCart, LogOut, Menu, X, Palette, Bell } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import NotificationsList from '@/components/NotificationsList'
 import { useTranslation } from 'react-i18next';
 import { translateText } from '@/lib/translate';
 import '@/lib/i18n';
@@ -15,6 +17,9 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [translatedName, setTranslatedName] = useState('')
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [hasLiveAuctions, setHasLiveAuctions] = useState(false)
   const { i18n, t } = useTranslation();
   const languages = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -47,6 +52,16 @@ export default function Navbar() {
     setMounted(true)
   }, [])
 
+  // Poll for live auctions and unread count every 30s
+  useEffect(() => {
+    fetchLiveAuctions()
+    const iv = setInterval(() => {
+      fetchLiveAuctions()
+      if (user?.id) fetchUnread(user.id)
+    }, 30000)
+    return () => clearInterval(iv)
+  }, [user?.id])
+
   // Translate user name when profile or language changes
   useEffect(() => {
     const translateUserName = async () => {
@@ -63,6 +78,27 @@ export default function Navbar() {
     }
     translateUserName()
   }, [profile?.name, currentLanguage])
+
+  const fetchUnread = async (uid?: string | null) => {
+    if (!uid) return setUnreadCount(0)
+    try {
+      const { count } = await supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', uid).eq('read', false)
+      setUnreadCount(count || 0)
+    } catch (err) {
+      console.error('failed fetch unread', err)
+    }
+  }
+
+  const fetchLiveAuctions = async () => {
+    try {
+      const now = new Date().toISOString()
+      const { count } = await supabase.from('auctions').select('*', { count: 'exact', head: true }).eq('status', 'running').gt('ends_at', now)
+      setHasLiveAuctions((count || 0) > 0)
+    } catch (err) {
+      console.error('failed to fetch live auctions', err)
+    }
+  }
+
 
   // Prevent hydration mismatch by showing consistent structure during loading
   if (!mounted) {
@@ -94,6 +130,7 @@ export default function Navbar() {
     await signOut()
     setIsMenuOpen(false)
   }
+ 
 
   // Language change handler
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -123,6 +160,16 @@ export default function Navbar() {
               <span className="relative z-10">{t('navigation.marketplace')}</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
             </Link>
+            <Link 
+              href="/auctions" 
+              className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
+            >
+                <span className="relative z-10">{t('navigation.auctions') || 'Auctions'}</span>
+                {hasLiveAuctions && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-red-600 text-white text-xs font-semibold rounded-full">{t('navigation.live') || 'LIVE'}</span>
+                )}
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
+            </Link>
             {loading ? (
               <div className="flex items-center space-x-6">
                 <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
@@ -149,6 +196,21 @@ export default function Navbar() {
                   </span>
                 </Link>
                 <div className="flex items-center space-x-6">
+                  <div className="relative">
+                    <button onClick={() => { setNotifOpen(!notifOpen); fetchUnread(user?.id) }} className="p-2 rounded-xl hover:bg-heritage-gold/50">
+                      <Bell className="w-5 h-5 text-gray-700" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{unreadCount}</span>
+                      )}
+                    </button>
+                    {notifOpen && (
+                      <div className="absolute right-0 mt-2 w-80 z-50">
+                        <div className="bg-white rounded shadow-lg p-3">
+                          <NotificationsList />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <span className="text-gray-700 font-medium px-4 py-2 bg-white/50 rounded-xl backdrop-blur-sm">
                     {translatedName || profile?.name}
                   </span>
@@ -213,6 +275,18 @@ export default function Navbar() {
               >
                 {t('navigation.marketplace')}
               </Link>
+              <Link 
+                href="/auctions" 
+                className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="inline-flex items-center">
+                  {t('navigation.auctions') || 'Auctions'}
+                  {hasLiveAuctions && (
+                    <span className="ml-2 inline-flex items-center px-2 py-0.5 bg-red-600 text-white text-xs font-semibold rounded-full">{t('navigation.live') || 'LIVE'}</span>
+                  )}
+                </span>
+              </Link>
               {loading ? (
                 <div className="space-y-4">
                   <div className="w-32 h-8 bg-gray-200 rounded animate-pulse mx-6"></div>
@@ -229,6 +303,13 @@ export default function Navbar() {
                       {t('navigation.dashboard')}
                     </Link>
                   )}
+                  <Link 
+                    href="/notifications" 
+                    className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {t('navigation.notifications') || 'Notifications'}
+                  </Link>
                   <Link 
                     href="/cart" 
                     className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"

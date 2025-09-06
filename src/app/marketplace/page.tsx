@@ -51,6 +51,7 @@ function MarketplaceContent() {
   const [displayCategories, setDisplayCategories] = useState<string[]>([])
   const [translatedSellerNames, setTranslatedSellerNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [auctionedProductIds, setAuctionedProductIds] = useState<string[]>([])
   const [searchLogTimer, setSearchLogTimer] = useState<NodeJS.Timeout | null>(null)
   const [recommended, setRecommended] = useState<ProductBase[]>([])
   const [recLoading, setRecLoading] = useState(false)
@@ -82,13 +83,33 @@ function MarketplaceContent() {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
+      // fetch active/scheduled auctions to exclude their products from normal listing
+      try {
+        const { data: aData } = await supabase
+          .from('auctions')
+          .select('product_id,status,starts_at')
+          .in('status', ['scheduled','running'])
+        const ids = (aData || []).map((a: any) => a.product_id)
+        setAuctionedProductIds(ids)
+      } catch (err) {
+        console.error('Error fetching auctions for marketplace:', err)
+        setAuctionedProductIds([])
+      }
+      let query = supabase
         .from('products')
         .select(`
           *,
           seller:profiles(name)
         `)
         .order('created_at', { ascending: false })
+
+      if (auctionedProductIds.length > 0) {
+        // exclude auctioned products from normal listing
+        const inList = `(${auctionedProductIds.map((id) => `'${id}'`).join(',')})`
+        query = query.not('id', 'in', inList)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 

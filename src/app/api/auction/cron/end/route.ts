@@ -1,0 +1,59 @@
+import { NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
+
+// POST: End auctions whose ends_at <= now and are running or scheduled
+export async function POST(req: Request) {
+  try {
+    const now = new Date().toISOString()
+    // select auctions that should be ended
+    const { data: toEnd, error: selErr } = await supabase
+      .from('auctions')
+      .select('*')
+      .or(`and(ends_at.lte.${now},status.eq.running),and(ends_at.lte.${now},status.eq.scheduled)`)
+
+    if (selErr) return NextResponse.json({ error: selErr.message }, { status: 500 })
+    if (!toEnd || toEnd.length === 0) return NextResponse.json({ ended: 0 })
+
+    let ended = 0
+    for (const a of toEnd) {
+      try {
+        const { data: bids } = await supabase.from('bids').select('*').eq('auction_id', a.id).order('amount', { ascending: false }).limit(1)
+        const winner = bids?.[0]
+        const updates: any = { status: 'completed' }
+        if (winner) updates.winner_id = winner.bidder_id
+        const { error: updErr } = await supabase.from('auctions').update(updates).eq('id', a.id)
+        if (updErr) {
+          console.error('failed to update auction', a.id, updErr)
+          continue
+        }
+        if (winner) {
+          try {
+            // fetch product title if available
+            let productTitle = a.product_id
+            try {
+              const { data: p } = await supabase.from('products').select('title').eq('id', a.product_id).single()
+              if (p?.title) productTitle = p.title
+            } catch {}
+
+            await supabase.from('notifications').insert({
+              user_id: winner.bidder_id,
+              title: 'You won an auction!',
+              body: `You won the auction for "${productTitle}" with bid ₹${winner.amount}. Please visit your dashboard to pay and claim the item.`,
+              read: false,
+              metadata: { auction_id: a.id, product_id: a.product_id, product_title: productTitle, amount: winner.amount }
+            })
+          } catch (nerr) {
+            console.error('notification insert failed', nerr)
+          }
+        }
+        ended++
+      } catch (err) {
+        console.error('error ending auction', a.id, err)
+      }
+    }
+
+    return NextResponse.json({ ended })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}

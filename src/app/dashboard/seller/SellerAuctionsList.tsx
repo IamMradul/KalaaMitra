@@ -1,0 +1,87 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import { useTranslation } from 'react-i18next'
+
+export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
+  const { t } = useTranslation()
+  const [auctions, setAuctions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAuctions()
+  }, [])
+
+  const fetchAuctions = async () => {
+    setLoading(true)
+    try {
+      const { data } = await supabase.from('auctions').select('*').eq('seller_id', sellerId).order('created_at', { ascending: false })
+      const rows = data || []
+      // fetch product titles for these auctions
+      const productIds = Array.from(new Set(rows.map((r: any) => r.product_id).filter(Boolean)))
+      let productMap: Record<string, string> = {}
+      if (productIds.length > 0) {
+        const { data: products } = await supabase.from('products').select('id,title').in('id', productIds)
+        for (const p of (products || [])) productMap[p.id] = p.title
+      }
+      const withTitles = rows.map((r: any) => ({ ...r, product_title: productMap[r.product_id] || r.product_id }))
+      setAuctions(withTitles)
+    } catch (err) {
+      console.error('fetch seller auctions err', err)
+    }
+    setLoading(false)
+  }
+
+  const endAuction = async (id: string) => {
+    if (!confirm(t('common.confirm')) ) return
+    try {
+      const res = await fetch('/api/auction/end', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ auction_id: id }) })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.error || 'failed')
+      if (j.winner) {
+        alert(t('auction.endedWithWinner', { name: j.winner.bidder_id, amount: j.winner.amount }))
+      } else {
+        alert(t('auction.endedNoBids'))
+      }
+      fetchAuctions()
+    } catch (err: any) {
+      alert(t('errors.general') + ': ' + (err.message || err))
+    }
+  }
+
+  const deleteAuction = async (id: string) => {
+    if (!confirm(t('common.confirm'))) return
+    try {
+      // For now perform a direct DB delete via supabase client (seller must have permission)
+      const { error } = await supabase.from('auctions').delete().eq('id', id)
+      if (error) throw error
+      alert(t('auction.deleted'))
+      fetchAuctions()
+    } catch (err: any) {
+      alert(t('errors.general') + ': ' + (err.message || err))
+    }
+  }
+
+  if (loading) return <div>{t('common.loading')}</div>
+  if (auctions.length === 0) return <div>{t('seller.noProducts')}</div>
+
+  return (
+    <div>
+      <div className="grid gap-3">
+        {auctions.map(a => (
+          <div key={a.id} className="border p-3 rounded bg-white flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="font-semibold">{a.product_title || a.product?.title || a.product_id}</div>
+              <div className="text-sm text-gray-600">{t('auction.status')}: {a.status} | {t('auction.title')}: {a.starts_at ? new Date(a.starts_at).toLocaleString() : '—'} → {a.ends_at ? new Date(a.ends_at).toLocaleString() : '—'}</div>
+            </div>
+            <div className="mt-3 md:mt-0 flex space-x-2">
+              {a.status !== 'completed' && <button onClick={() => endAuction(a.id)} className="px-3 py-1 bg-blue-600 text-white rounded">{t('common.confirm')}</button>}
+              <button onClick={() => deleteAuction(a.id)} className="px-3 py-1 bg-red-600 text-white rounded">{t('auction.deleted')}</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

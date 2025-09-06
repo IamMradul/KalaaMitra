@@ -13,6 +13,7 @@ import { extractImageFeatures } from '@/lib/image-similarity'
 import AIProductForm from '@/components/AIProductForm'
 import SellerAnalytics from './SellerAnalytics'
 import ProfileManager from './ProfileManager'
+import SellerAuctionsList from './SellerAuctionsList'
 
 type Product = Database['public']['Tables']['products']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -558,6 +559,67 @@ export default function SellerDashboard() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-orange-200"
         >
+          {/* Auction creation form for sellers */}
+          <div className="mb-6 border p-4 rounded">
+            <h3 className="font-semibold mb-2">{t('auction.title')} - {t('common.save')}</h3>
+            <div className="text-sm text-gray-600 mb-3">{t('product.byAuthor', { name: profile?.name || '' })}</div>
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              const fd = new FormData(e.currentTarget as HTMLFormElement)
+              const product_id = fd.get('product_id') as string
+              const starting_price = Number(fd.get('starting_price'))
+              const starts_at_raw = fd.get('starts_at') as string || ''
+              const ends_at_raw = fd.get('ends_at') as string || ''
+              // Convert local datetime-local (no timezone) to ISO string (UTC) to avoid timezone drift
+              const starts_at = starts_at_raw ? new Date(starts_at_raw).toISOString() : null
+              const ends_at = ends_at_raw ? new Date(ends_at_raw).toISOString() : null
+              if (!product_id || !starting_price) return alert(t('auction.invalidAmount'))
+              try {
+                const res = await fetch('/api/auction', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ product_id, starting_price, starts_at, ends_at, seller_id: user?.id }) })
+                const j = await res.json()
+                if (!res.ok) throw new Error(j.error || 'Failed')
+                alert(t('auction.created'))
+                // Refresh products and seller auctions
+                fetchProducts()
+                // optional: refresh SellerAuctionsList by emitting event or refetch via state; simple approach: reload page
+                // location.reload()
+              } catch (err: any) {
+                alert(t('errors.general') + ': ' + (err.message || err))
+              }
+            }}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="block text-xs text-gray-600">{t('product.byAuthor')}</label>
+                  <select name="product_id" className="border p-2 rounded w-full" required>
+                    <option value="">Select product</option>
+                    {products.map(p => (<option key={p.id} value={p.id}>{p.title}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">{t('product.addToCart')}</label>
+                  <input name="starting_price" type="number" placeholder={t('auction.enterBid')} className="border p-2 rounded w-full" required />
+                </div>
+                <div className="col-span-1 md:col-span-3 grid md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-600">Starts at</label>
+                    <input name="starts_at" type="datetime-local" className="border p-2 rounded w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600">Ends at</label>
+                    <input name="ends_at" type="datetime-local" className="border p-2 rounded w-full" />
+                  </div>
+                </div>
+                <div className="col-span-1 md:col-span-3">
+                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">{t('auction.created')}</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          {/* Seller's Auctions Management */}
+          <div className="mb-6 border p-4 rounded">
+            <h3 className="font-semibold mb-2">Your Auctions</h3>
+            <SellerAuctionsList sellerId={user.id} />
+          </div>
           <div className="flex justify-between items-center mb-6">
       <h2 className="text-2xl font-semibold text-gray-900">{t('seller.yourProducts')}</h2>
             <div className="flex items-center space-x-3">

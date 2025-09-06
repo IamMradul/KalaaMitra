@@ -24,13 +24,15 @@
   "navigation": {
     "home": "Home",
     "marketplace": "Marketplace",
+  "auctions": "Auctions",
     "dashboard": "Dashboard",
     "cart": "Cart",
     "profile": "Profile",
     "signin": "Sign In",
     "signup": "Sign Up",
     "signout": "Sign Out",
-    "language": "Language"
+  "language": "Language",
+  "live": "Live"
   },
   "auth": {
     "welcome": "Welcome to KalaaMitra",
@@ -133,6 +135,24 @@
   "notFound": "Product not found",
   "meetTheArtisan": "Meet the Artisan",
   "viewAllProducts": "View All Products"
+  },
+  "auction": {
+    "title": "Auction",
+    "noAuction": "No auction available",
+    "invalidAmount": "Invalid bid amount",
+    "ended": "Ended",
+    "bidTooLow": "Your bid must be higher than the current bid",
+    "bidFailed": "Failed to place bid",
+    "status": "Status",
+    "currentBid": "Current Bid",
+    "enterBid": "Enter your bid",
+    "placeBid": "Place Bid",
+    "recentBids": "Recent Bids",
+    "onAuction": "On Auction",
+    "created": "Auction created",
+    "endedWithWinner": "Auction ended. Winner: {{name}} with ₹{{amount}}",
+    "endedNoBids": "Auction ended with no bids",
+    "deleted": "Auction deleted"
   },
   "cart": {
     "title": "Shopping Cart",

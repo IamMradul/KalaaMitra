@@ -72,6 +72,93 @@ export type Database = {
           created_at?: string
         }
       }
+      auctions: {
+        Row: {
+          id: string
+          product_id: string
+          seller_id: string
+          starting_price: number
+          starts_at: string | null
+          ends_at: string | null
+          status: 'scheduled' | 'running' | 'completed' | 'cancelled'
+          winner_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          seller_id: string
+          starting_price: number
+          starts_at?: string | null
+          ends_at?: string | null
+          status?: 'scheduled' | 'running' | 'completed' | 'cancelled'
+          winner_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          seller_id?: string
+          starting_price?: number
+          starts_at?: string | null
+          ends_at?: string | null
+          status?: 'scheduled' | 'running' | 'completed' | 'cancelled'
+          winner_id?: string | null
+          created_at?: string
+        }
+      }
+      bids: {
+        Row: {
+          id: string
+          auction_id: string
+          bidder_id: string
+          amount: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          auction_id: string
+          bidder_id: string
+          amount: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          auction_id?: string
+          bidder_id?: string
+          amount?: number
+          created_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          body: string
+          read: boolean
+          metadata: any
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          body: string
+          read?: boolean
+          metadata?: any
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          body?: string
+          read?: boolean
+          metadata?: any
+          created_at?: string
+        }
+      }
       cart: {
         Row: {
           id: string
