@@ -43,12 +43,12 @@ export default function NotificationsList() {
   return (
     <div className="space-y-2">
       {notes.map(n => (
-        <div key={n.id} className={`p-3 rounded border ${n.read ? 'bg-gray-50' : 'bg-white'}`}>
+        <div key={n.id} className={`p-3 rounded border ${n.read ? 'bg-[var(--bg-2)]' : 'card'}`}>
           <div className="flex justify-between items-start">
             <div>
-              <div className="font-semibold">{n.title}</div>
-              <div className="text-sm text-gray-700">{n.body}</div>
-              <div className="text-xs text-gray-400 mt-1">{new Date(n.created_at).toLocaleString()}</div>
+              <div className="font-semibold text-[var(--text)]">{n.title}</div>
+              <div className="text-sm text-[var(--muted)]">{n.body}</div>
+              <div className="text-xs text-[var(--muted)] mt-1">{new Date(n.created_at).toLocaleString()}</div>
             </div>
             {!n.read && <button onClick={() => markRead(n.id)} className="ml-3 px-2 py-1 bg-green-600 text-white rounded">Mark read</button>}
           </div>

@@ -80,7 +80,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="section-padding bg-white/60 backdrop-blur-sm relative">
+  <section className="section-padding bg-[var(--bg-2)]/60 backdrop-blur-sm relative">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-3">
           <div className="absolute top-20 left-10 w-64 h-64 bg-gradient-to-br from-orange-200 to-red-200 rounded-full mix-blend-multiply filter blur-2xl floating-element"></div>
@@ -89,10 +89,10 @@ export default function Home() {
 
         <div className="container-custom relative">
           <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8 animate-slide-in-up">
+            <h2 className="text-5xl md:text-6xl font-bold text-[var(--text)] mb-8 animate-slide-in-up">
               {t('home.whyChoose')} <span className="gradient-text-animated" key={`why-choose-brand-${currentLanguage}`}>{t('brand.name')}</span>?
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto animate-slide-in-up animate-delay-100">
+            <p className="text-xl text-[var(--muted)] max-w-3xl mx-auto animate-slide-in-up animate-delay-100">
               {t('home.whyChooseDesc')}
             </p>
           </div>
@@ -102,8 +102,8 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
                 <Zap className="w-12 h-12 text-gradient-primary" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">{t('home.feature1.title')}</h3>
-              <p className="text-gray-600 leading-relaxed text-lg">
+              <h3 className="text-2xl font-semibold text-[var(--text)] mb-6">{t('home.feature1.title')}</h3>
+              <p className="text-[var(--muted)] leading-relaxed text-lg">
                 {t('home.feature1.desc')}
               </p>
             </div>
@@ -112,8 +112,8 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-amber-100 to-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
                 <Users className="w-12 h-12 text-gradient-secondary" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">{t('home.feature2.title')}</h3>
-              <p className="text-gray-600 leading-relaxed text-lg">
+              <h3 className="text-2xl font-semibold text-[var(--text)] mb-6">{t('home.feature2.title')}</h3>
+              <p className="text-[var(--muted)] leading-relaxed text-lg">
                 {t('home.feature2.desc')}
               </p>
             </div>
@@ -122,8 +122,8 @@ export default function Home() {
               <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-all duration-500 shadow-soft">
                 <Shield className="w-12 h-12 text-red-500" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-6">{t('home.feature3.title')}</h3>
-              <p className="text-gray-600 leading-relaxed text-lg">
+              <h3 className="text-2xl font-semibold text-[var(--text)] mb-6">{t('home.feature3.title')}</h3>
+              <p className="text-[var(--muted)] leading-relaxed text-lg">
                 {t('home.feature3.desc')}
               </p>
             </div>

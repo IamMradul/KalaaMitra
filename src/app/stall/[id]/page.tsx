@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { logActivity } from '@/lib/activity'
 import { ArrowLeft, User, Palette, MapPin, Calendar } from 'lucide-react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
@@ -115,7 +116,7 @@ export default function StallPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 py-8">
+    <div className="min-h-screen bg-[var(--bg-2)] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.div
@@ -138,13 +139,15 @@ export default function StallPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-white/80 backdrop-blur-sm rounded-xl p-8 mb-8 border border-orange-200 text-center"
+          className="card-glass rounded-xl p-8 mb-8 text-center"
         >
-          <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-24 h-24 bg-[var(--bg-2)] rounded-full flex items-center justify-center mx-auto mb-6">
             {stallProfile.profile_image ? (
-              <img
+              <Image
                 src={stallProfile.profile_image}
                 alt={stallProfile.name}
+                width={96}
+                height={96}
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
@@ -152,23 +155,23 @@ export default function StallPage() {
             )}
           </div>
           
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-[var(--text)] mb-4">
             {stallProfile.name}&apos;s {t('navigation.profile')}
           </h1>
           
           {stallProfile.store_description && (
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-[var(--muted)] max-w-2xl mx-auto mb-6">
               {stallProfile.store_description}
             </p>
           )}
           
           {!stallProfile.store_description && stallProfile.bio && (
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-[var(--muted)] max-w-2xl mx-auto mb-6">
               {stallProfile.bio}
             </p>
           )}
           
-          <div className="flex justify-center space-x-8 text-sm text-gray-500">
+          <div className="flex justify-center space-x-8 text-sm text-[var(--muted)]">
             <div className="flex items-center">
               <MapPin className="w-4 h-4 mr-2" />
               <span>{t('navigation.dashboard')}</span>
@@ -187,19 +190,19 @@ export default function StallPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">
+            <h2 className="text-2xl font-semibold text-[var(--text)]">
               {t('marketplace.title')} - {stallProfile.name}
             </h2>
-            <span className="text-gray-600">
+            <span className="text-[var(--muted)]">
               {products.length} {products.length !== 1 ? t('product.relatedProducts').toLowerCase() : t('product.item', { defaultValue: 'item' })}
             </span>
           </div>
 
           {products.length === 0 ? (
-            <div className="text-center py-12 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200">
-              <Palette className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">{t('marketplace.noProducts')}</p>
-              <p className="text-gray-400">{t('marketplace.noProductsDescription')}</p>
+            <div className="text-center py-12 card-glass rounded-xl">
+              <Palette className="w-16 h-16 text-[var(--muted)] mx-auto mb-4" />
+              <p className="text-[var(--muted)] text-lg">{t('marketplace.noProducts')}</p>
+              <p className="text-[var(--muted)]">{t('marketplace.noProductsDescription')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -209,15 +212,16 @@ export default function StallPage() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105"
+                  className="card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-105"
                 >
                   <Link href={`/product/${product.id}`}>
-                    <div className="h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="relative h-48 bg-[var(--bg-2)] flex items-center justify-center overflow-hidden">
                       {product.image_url ? (
-                        <img
+                        <Image
                           src={product.image_url}
                           alt={product.title}
-                          className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                          fill
+                          className="object-cover hover:scale-110 transition-transform duration-300"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
@@ -229,12 +233,12 @@ export default function StallPage() {
                   
                   <div className="p-4">
                     <Link href={`/product/${product.id}`}>
-                      <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors">
+                      <h3 className="font-semibold text-[var(--text)] mb-2 hover:text-orange-600 transition-colors">
                         {product.title}
                       </h3>
                     </Link>
                     
-                    <p className="text-sm text-gray-600 mb-2">{product.category}</p>
+                    <p className="text-sm text-[var(--muted)] mb-2">{product.category}</p>
                     <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
                   </div>
                 </motion.div>
@@ -248,18 +252,18 @@ export default function StallPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-12 bg-white/80 backdrop-blur-sm rounded-xl p-8 border border-orange-200"
+          className="mt-12 card-glass rounded-xl p-8"
         >
-          <h3 className="text-2xl font-semibold text-gray-900 mb-4 text-center">
+          <h3 className="text-2xl font-semibold text-[var(--text)] mb-4 text-center">
             {t('product.meetTheArtisan')}
           </h3>
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-gray-600 leading-relaxed mb-6">
+            <p className="text-[var(--muted)] leading-relaxed mb-6">
               {stallProfile.store_description || stallProfile.bio || 
                 `${stallProfile.name} is a passionate artisan dedicated to creating unique, handcrafted pieces that celebrate tradition and craftsmanship. Each creation is made with care and attention to detail, ensuring that every piece tells a story and brings beauty to your life.`
               }
             </p>
-            <div className="flex justify-center space-x-6 text-sm text-gray-500">
+            <div className="flex justify-center space-x-6 text-sm text-[var(--muted)]">
               <div className="flex items-center">
                 <Palette className="w-4 h-4 mr-2" />
                 <span>{t('seller.overview', { defaultValue: 'Business Overview' })}</span>

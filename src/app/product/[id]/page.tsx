@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { logActivity } from '@/lib/activity'
 import { ShoppingCart, Heart, ArrowLeft, Star, User } from 'lucide-react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/lib/supabase'
 import Link from 'next/link'
@@ -121,7 +122,7 @@ export default function ProductDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 py-8">
+    <div className="min-h-screen bg-[var(--bg-2)] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.div
@@ -145,14 +146,15 @@ export default function ProductDetail() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="bg-white rounded-xl p-6 border border-orange-200"
+            className="card rounded-xl p-6"
           >
-            <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden">
+            <div className="relative aspect-square rounded-lg overflow-hidden bg-[var(--bg-2)]">
               {product.image_url ? (
-                <img
+                <Image
                   src={product.image_url}
                   alt={product.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
@@ -171,10 +173,10 @@ export default function ProductDetail() {
           >
             {/* Product Info */}
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-4xl font-bold text-[var(--text)] mb-2">
                 {product.title}
               </h1>
-              <p className="text-lg text-gray-600 mb-4">
+              <p className="text-lg text-[var(--muted)] mb-4">
                 {product.category}
               </p>
               <div className="flex items-center space-x-4 mb-4">
@@ -188,7 +190,7 @@ export default function ProductDetail() {
                     />
                   ))}
                 </div>
-                <span className="text-gray-500">(4.8 • 24 {t('product.reviews').toLowerCase()})</span>
+                <span className="text-[var(--muted)]">(4.8 • 24 {t('product.reviews').toLowerCase()})</span>
               </div>
               <p className="text-3xl font-bold text-orange-600">
                 ₹{product.price}
@@ -197,10 +199,10 @@ export default function ProductDetail() {
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-[var(--text)] mb-2">
                 {t('product.description')}
               </h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-[var(--muted)] leading-relaxed">
                 {product.description}
               </p>
             </div>
@@ -208,13 +210,13 @@ export default function ProductDetail() {
             {/* Quantity and Add to Cart */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-[var(--muted)] mb-2">
                   {t('product.quantity')}
                 </label>
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+          className="w-10 h-10 border border-[var(--border)] rounded-lg flex items-center justify-center hover:bg-[var(--bg-2)] transition-colors"
                   >
                     -
                   </button>
@@ -223,7 +225,7 @@ export default function ProductDetail() {
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+          className="w-10 h-10 border border-[var(--border)] rounded-lg flex items-center justify-center hover:bg-[var(--bg-2)] transition-colors"
                   >
                     +
                   </button>
@@ -234,12 +236,12 @@ export default function ProductDetail() {
                 <button
                   onClick={addToCart}
                   disabled={hasActiveAuction}
-                  className={`flex-1 flex items-center justify-center px-6 py-3 ${hasActiveAuction ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-red-600 text-white'} font-semibold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200`}
+                  className={`flex-1 flex items-center justify-center px-6 py-3 ${hasActiveAuction ? 'bg-[var(--bg-2)] text-[var(--muted)] cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-red-600 text-white'} font-semibold rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200`}
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" />
                   {hasActiveAuction ? t('auction.onAuction') : t('product.addToCart')}
                 </button>
-                <button className="px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors" title={t('product.addToWishlist')}>
+                <button className="px-6 py-3 border border-[var(--border)] text-[var(--text)] font-semibold rounded-lg hover:bg-[var(--bg-2)] transition-colors" title={t('product.addToWishlist')}>
                   <Heart className="w-5 h-5" />
                 </button>
               </div>
@@ -250,28 +252,30 @@ export default function ProductDetail() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-orange-200"
+              className="card-glass rounded-xl p-6"
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <h3 className="text-lg font-semibold text-[var(--text)] mb-4">
                 {t('product.meetTheArtisan')}
               </h3>
               <div className="flex items-center space-x-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center">
                   {product.seller?.profile_image ? (
-                    <img
+                    <Image
                       src={product.seller.profile_image}
                       alt={product.seller.name}
-                      className="w-full h-full rounded-full object-cover"
+                      width={64}
+                      height={64}
+                      className="rounded-full object-cover"
                     />
                   ) : (
                     <User className="w-8 h-8 text-orange-600" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900">
+                  <h4 className="font-semibold text-[var(--text)]">
                     {product.seller?.name}
                   </h4>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-[var(--muted)] text-sm">
                     {product.seller?.store_description || product.seller?.bio || 'Passionate artisan creating unique pieces'}
                   </p>
                   <Link
@@ -285,7 +289,7 @@ export default function ProductDetail() {
             </motion.div>
             {/* Auction Widget */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('auction.title')}</h3>
+              <h3 className="text-lg font-semibold text-[var(--text)] mb-4">{t('auction.title')}</h3>
               <AuctionWidget productId={product.id} />
             </div>
           </motion.div>

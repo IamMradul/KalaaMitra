@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase, Database } from '@/lib/supabase'
 import { useTranslation } from 'react-i18next'
 
@@ -11,11 +11,7 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
   const [auctions, setAuctions] = useState<AuctionRow[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchAuctions()
-  }, [])
-
-  const fetchAuctions = async () => {
+  const fetchAuctions = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await supabase.from('auctions').select('*').eq('seller_id', sellerId).order('created_at', { ascending: false })
@@ -33,7 +29,11 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
       console.error('fetch seller auctions err', err)
     }
     setLoading(false)
-  }
+  }, [sellerId])
+
+  useEffect(() => {
+    fetchAuctions()
+  }, [fetchAuctions])
 
   const endAuction = async (id: string) => {
     if (!confirm(t('common.confirm')) ) return
@@ -74,10 +74,10 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
     <div>
       <div className="grid gap-3">
         {auctions.map(a => (
-          <div key={a.id} className="border p-3 rounded bg-white flex flex-col md:flex-row md:items-center md:justify-between">
+          <div key={a.id} className="card border p-3 rounded flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="font-semibold">{a.product_title || a.product_id}</div>
-              <div className="text-sm text-gray-600">{t('auction.status')}: {a.status} | {t('auction.title')}: {a.starts_at ? new Date(a.starts_at).toLocaleString() : '—'} → {a.ends_at ? new Date(a.ends_at).toLocaleString() : '—'}</div>
+              <div className="font-semibold text-[var(--text)]">{a.product_title || a.product_id}</div>
+              <div className="text-sm text-[var(--muted)]">{t('auction.status')}: {a.status} | {t('auction.title')}: {a.starts_at ? new Date(a.starts_at).toLocaleString() : ''}  {a.ends_at ? new Date(a.ends_at).toLocaleString() : ''}</div>
             </div>
             <div className="mt-3 md:mt-0 flex space-x-2">
               {a.status !== 'completed' && <button onClick={() => endAuction(a.id)} className="px-3 py-1 bg-blue-600 text-white rounded">{t('common.confirm')}</button>}

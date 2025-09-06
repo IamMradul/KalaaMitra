@@ -1,6 +1,7 @@
-'use client'
+ 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Camera, Sparkles, Save, User, Store } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -195,11 +196,11 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-white rounded-xl border border-orange-200 p-6 mb-6"
+        className="card rounded-xl border p-6 mb-6"
       >
         <div className="text-center py-8">
           <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('seller.profile.loadingProfile')}</p>
+          <p className="text-[var(--muted)]">{t('seller.profile.loadingProfile')}</p>
         </div>
       </motion.div>
     )
@@ -210,10 +211,10 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-white rounded-xl border border-orange-200 p-6 mb-6"
+      className="card rounded-xl border p-6 mb-6"
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+        <h2 className="text-2xl font-bold text-[var(--text)] flex items-center">
           <Store className="w-6 h-6 mr-2 text-orange-600" />
           {t('seller.profile.title')}
         </h2>
@@ -228,17 +229,19 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       <div className="grid md:grid-cols-2 gap-6">
         {/* Profile Image Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+          <h3 className="text-lg font-semibold text-[var(--text)] flex items-center">
             <Camera className="w-5 h-5 mr-2 text-orange-600" />
             {t('seller.profile.profileImage')}
           </h3>
           
           <div className="flex items-center space-x-4">
-            <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden bg-[var(--bg-2)]">
               {imagePreview ? (
-                <img
+                <Image
                   src={imagePreview}
                   alt="Profile"
+                  width={96}
+                  height={96}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -257,7 +260,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-[var(--bg-2)] text-[var(--text)] rounded-lg hover:bg-[var(--bg-3)] transition-colors"
                 >
                   {t('seller.profile.chooseImage')}
                 </button>
@@ -268,39 +271,39 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
 
         {/* Profile Details Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">{t('seller.profile.details')}</h3>
+          <h3 className="text-lg font-semibold text-[var(--text)]">{t('seller.profile.details')}</h3>
           
           {isEditing ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--muted)] mb-1">
                   {t('seller.profile.fields.storeName.label')}
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-[var(--bg-2)] border-[var(--border)] text-[var(--text)]"
                   placeholder={t('seller.profile.fields.storeName.placeholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--muted)] mb-1">
                   {t('seller.profile.fields.bio.label')}
                 </label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-[var(--bg-2)] border-[var(--border)] text-[var(--text)]"
                   placeholder={t('seller.profile.fields.bio.placeholder')}
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-[var(--muted)]">
                     {t('seller.profile.fields.description.label')}
                   </label>
                   <button
@@ -316,7 +319,7 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
                   value={formData.store_description}
                   onChange={(e) => setFormData(prev => ({ ...prev, store_description: e.target.value }))}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-[var(--bg-2)] border-[var(--border)] text-[var(--text)]"
                   placeholder={t('seller.profile.fields.description.placeholder')}
                 />
               </div>
@@ -333,24 +336,24 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--muted)] mb-1">
                   {t('seller.profile.fields.storeName.label')}
                 </label>
-                <p className="text-gray-900">{displayName || t('seller.profile.notSet')}</p>
+                <p className="text-[var(--text)]">{displayName || t('seller.profile.notSet')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--muted)] mb-1">
                   {t('seller.profile.fields.bio.label')}
                 </label>
-                <p className="text-gray-900">{displayBio || t('seller.profile.noBio')}</p>
+                <p className="text-[var(--text)]">{displayBio || t('seller.profile.noBio')}</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--muted)] mb-1">
                   {t('seller.profile.fields.description.label')}
                 </label>
-                <p className="text-gray-900">{displayDesc || t('seller.profile.noDescription')}</p>
+                <p className="text-[var(--text)]">{displayDesc || t('seller.profile.noDescription')}</p>
               </div>
             </div>
           )}
@@ -358,12 +361,12 @@ export default function ProfileManager({ profile, products, onProfileUpdate }: P
       </div>
 
       {!isEditing && (
-        <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+        <div className="mt-6 p-4 rounded-lg border border-[var(--border)] bg-[var(--bg-2)]">
           <div className="flex items-start">
             <Sparkles className="w-5 h-5 text-orange-600 mr-2 mt-0.5" />
             <div>
               <h4 className="text-sm font-semibold text-orange-800 mb-1">{t('seller.profile.aiDescriptionTitle')}</h4>
-              <p className="text-sm text-orange-700">
+              <p className="text-sm text-[var(--muted)]">
                 {t('seller.profile.aiDescriptionHelp')}
               </p>
             </div>

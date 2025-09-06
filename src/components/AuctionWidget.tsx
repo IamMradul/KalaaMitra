@@ -137,8 +137,8 @@ export default function AuctionWidget({ productId }: Props) {
   if (loading) return <div>{t('loading')}</div>
 
   if (!auction) return (
-    <div className="p-4 bg-white rounded-lg border">
-      <div className="text-sm text-gray-700">{t('auction.noAuction')}</div>
+    <div className="p-4 card rounded-lg">
+      <div className="text-sm text-[var(--muted)]">{t('auction.noAuction')}</div>
     </div>
   )
 
@@ -146,16 +146,16 @@ export default function AuctionWidget({ productId }: Props) {
   const auctionEnded = !!(auction && (auction.status !== 'running' || (auction.ends_at && new Date(auction.ends_at).getTime() <= Date.now())))
 
   return (
-    <div className="p-4 bg-white rounded-lg border">
+    <div className="p-4 card rounded-lg">
       <div className="flex justify-between items-center mb-2">
         <div>
-          <div className="text-sm text-gray-500">{t('auction.status')}: {auction.status}</div>
-          <div className="text-lg font-semibold">{t('auction.currentBid')}: ₹{highest}</div>
+          <div className="text-sm text-[var(--muted)]">{t('auction.status')}: {auction.status}</div>
+          <div className="text-lg font-semibold text-[var(--text)]">{t('auction.currentBid')}: ₹{highest}</div>
         </div>
-        <div className="text-sm text-gray-500">{auction.starts_at ? new Date(auction.starts_at).toLocaleString() : ''} - {auction.ends_at ? new Date(auction.ends_at).toLocaleString() : ''}</div>
+        <div className="text-sm text-[var(--muted)]">{auction.starts_at ? new Date(auction.starts_at).toLocaleString() : ''} - {auction.ends_at ? new Date(auction.ends_at).toLocaleString() : ''}</div>
       </div>
       {timeLeft && (
-        <div className="mb-3 text-sm text-red-600 font-mono">Time left: {timeLeft}</div>
+        <div className="mb-3 text-sm text-red-500 font-mono">Time left: {timeLeft}</div>
       )}
 
       <div className="mb-3">
@@ -167,19 +167,19 @@ export default function AuctionWidget({ productId }: Props) {
             setAmount(v ? Number(v) : '')
           }}
           placeholder={t('auction.enterBid')}
-          className="w-full border p-2 rounded"
+          className="w-full border border-[var(--border)] p-2 rounded bg-[var(--bg-2)] text-[var(--text)]"
           disabled={auctionEnded}
         />
       </div>
       <div className="flex space-x-2">
-        <button onClick={placeBid} disabled={auctionEnded} className={`px-4 py-2 ${auctionEnded ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-orange-500 text-white'} rounded`}>{auctionEnded ? t('auction.ended') : t('auction.placeBid')}</button>
+        <button onClick={placeBid} disabled={auctionEnded} className={`px-4 py-2 ${auctionEnded ? 'bg-[var(--bg-2)] text-[var(--muted)] cursor-not-allowed' : 'bg-orange-500 text-white'} rounded`}>{auctionEnded ? t('auction.ended') : t('auction.placeBid')}</button>
       </div>
 
       <div className="mt-4">
-        <h4 className="font-semibold">{t('auction.recentBids')}</h4>
+        <h4 className="font-semibold text-[var(--text)]">{t('auction.recentBids')}</h4>
         <ul className="mt-2">
       {bids.map(b => (
-            <li key={b.id} className="flex justify-between py-1 border-b">
+            <li key={b.id} className="flex justify-between py-1 border-b border-[var(--border)] text-[var(--muted)]">
               <span>{b.bidder?.name || b.bidder_id}</span>
               <span>₹{b.amount}</span>
             </li>

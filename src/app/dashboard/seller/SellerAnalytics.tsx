@@ -10,7 +10,7 @@ import { translateArray, translateText } from '@/lib/translate'
 type Props = { sellerId: string }
 
 export default function SellerAnalytics({ sellerId }: Props) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { currentLanguage } = useLanguage()
   const [loading, setLoading] = useState(true)
   const [totalViews, setTotalViews] = useState(0)
@@ -137,58 +137,58 @@ export default function SellerAnalytics({ sellerId }: Props) {
   }, [currentLanguage, rawGuidance])
 
   if (loading) {
-    return <div className="text-gray-600">{t('seller.analyticsShort.loading')}</div>
+  return <div className="text-[var(--muted)]">{t('seller.analyticsShort.loading')}</div>
   }
 
   return (
     <div className="grid md:grid-cols-3 gap-6">
-      <div className="bg-white rounded-lg border p-4">
-        <div className="text-sm text-gray-500">{t('seller.analyticsShort.stallViews30d')}</div>
-        <div className="text-3xl font-bold text-gray-900">{totalViews}</div>
+      <div className="card rounded-lg border p-4">
+        <div className="text-sm text-[var(--muted)]">{t('seller.analyticsShort.stallViews30d')}</div>
+        <div className="text-3xl font-bold text-[var(--text)]">{totalViews}</div>
       </div>
-      <div className="bg-white rounded-lg border p-4">
-        <div className="text-sm text-gray-500">{t('seller.analyticsShort.uniqueVisitors30d')}</div>
-        <div className="text-3xl font-bold text-gray-900">{uniqueVisitors}</div>
+      <div className="card rounded-lg border p-4">
+        <div className="text-sm text-[var(--muted)]">{t('seller.analyticsShort.uniqueVisitors30d')}</div>
+        <div className="text-3xl font-bold text-[var(--text)]">{uniqueVisitors}</div>
       </div>
-      <div className="bg-white rounded-lg border p-4 md:col-span-1">
-        <div className="text-sm text-gray-500 mb-2">{t('seller.analyticsShort.topProducts30d')}</div>
+      <div className="card rounded-lg border p-4 md:col-span-1">
+        <div className="text-sm text-[var(--muted)] mb-2">{t('seller.analyticsShort.topProducts30d')}</div>
         {topProducts.length === 0 ? (
-          <div className="text-gray-600">{t('seller.analyticsShort.noProductViewsYet')}</div>
+          <div className="text-[var(--muted)]">{t('seller.analyticsShort.noProductViewsYet')}</div>
         ) : (
           <ul className="space-y-1">
             {topProducts.map(p => (
-              <li key={p.id} className="flex justify-between text-sm text-gray-700">
-                <span className="truncate mr-2">{p.title}</span>
-                <span className="font-medium">{p.views}</span>
+              <li key={p.id} className="flex justify-between text-sm text-[var(--muted)]">
+                <span className="truncate mr-2 text-[var(--text)]">{p.title}</span>
+                <span className="font-medium text-[var(--text)]">{p.views}</span>
               </li>
             ))}
           </ul>
         )}
       </div>
-      <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-200 p-4 md:col-span-3">
+      <div className="card rounded-lg border p-4 md:col-span-3">
         <div className="flex items-start">
           <div className="mr-3 text-orange-600 text-xl">💡</div>
           <div>
             <div className="text-sm font-semibold text-orange-700 mb-1">{t('seller.analyticsShort.tipsTitle')}</div>
             {toBullets(guidance).length > 1 ? (
-              <ul className="list-disc list-inside space-y-1 text-gray-800">
+              <ul className="list-disc list-inside space-y-1 text-[var(--text)]">
                 {toBullets(guidance).map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
               </ul>
             ) : (
-              <div className="text-gray-800 leading-relaxed">{guidance}</div>
+              <div className="text-[var(--text)] leading-relaxed">{guidance}</div>
             )}
           </div>
         </div>
-        <div className="mt-4 pt-3 border-t border-orange-100">
+        <div className="mt-4 pt-3 border-t border-[var(--border)]">
           <div className="text-sm font-semibold text-orange-700 mb-2">{t('seller.analyticsShort.askMoreTips')}</div>
           <div className="flex gap-2">
             <input
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder={t('seller.analyticsShort.askPlaceholder')}
-              className="flex-1 px-3 py-2 border border-orange-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+              className="flex-1 px-3 py-2 rounded-lg focus:outline-none bg-[var(--bg-2)] border-[var(--border)] text-[var(--text)]"
             />
             <button
               disabled={qaLoading || !question.trim()}
@@ -235,13 +235,13 @@ export default function SellerAnalytics({ sellerId }: Props) {
           </div>
           {answer && (
             toBullets(answer).length > 1 ? (
-              <ul className="mt-3 list-disc list-inside space-y-1 text-gray-800">
+              <ul className="mt-3 list-disc list-inside space-y-1 text-[var(--text)]">
                 {toBullets(answer).map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
               </ul>
             ) : (
-              <div className="mt-3 text-gray-800 whitespace-pre-wrap">{answer}</div>
+              <div className="mt-3 text-[var(--text)] whitespace-pre-wrap">{answer}</div>
             )
           )}
         </div>

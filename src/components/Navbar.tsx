@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/components/LanguageProvider'
-import { ShoppingCart, LogOut, Menu, X, Palette, Bell } from 'lucide-react'
+import { ShoppingCart, LogOut, Menu, X, Palette, Bell, Moon, Sun, User } from 'lucide-react'
+import { useTheme } from './ThemeProvider'
 import { supabase } from '@/lib/supabase'
 import NotificationsList from '@/components/NotificationsList'
 import { useTranslation } from 'react-i18next';
@@ -14,6 +15,7 @@ import '@/lib/i18n';
 export default function Navbar() {
   const { user, profile, signOut, loading } = useAuth()
   const { currentLanguage, changeLanguage, isLoading: languageLoading } = useLanguage()
+  const { theme, toggle } = useTheme()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [translatedName, setTranslatedName] = useState('')
@@ -115,8 +117,8 @@ export default function Navbar() {
             </div>
             {/* Navigation placeholder */}
             <div className="hidden md:flex items-center space-x-10">
-              <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
-              <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
+              <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -155,14 +157,14 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-10">
             <Link 
               href="/marketplace" 
-              className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
+              className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
             >
               <span className="relative z-10">{t('navigation.marketplace')}</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link 
               href="/auctions" 
-              className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
+              className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
             >
                 <span className="relative z-10">{t('navigation.auctions') || 'Auctions'}</span>
                 {hasLiveAuctions && (
@@ -172,15 +174,15 @@ export default function Navbar() {
             </Link>
             {loading ? (
               <div className="flex items-center space-x-6">
-                <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
-                <div className="w-20 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
+                <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
               </div>
             ) : user ? (
               <>
                 {profile?.role === 'seller' && (
                   <Link 
                     href="/dashboard" 
-                    className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
+                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] relative group"
                   >
                     <span className="relative z-10">{t('navigation.dashboard')}</span>
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
@@ -188,7 +190,7 @@ export default function Navbar() {
                 )}
                 <Link 
                   href="/cart" 
-                  className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium relative hover:scale-105 transform hover:translate-y-[-2px] group"
+                  className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium relative hover:scale-105 transform hover:translate-y-[-2px] group"
                 >
                   <ShoppingCart className="w-6 h-6" />
                   <span className="absolute -top-2 -right-2 bg-gradient-to-r from-heritage-gold to-heritage-red text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-medium animate-pulse-glow">
@@ -196,38 +198,54 @@ export default function Navbar() {
                   </span>
                 </Link>
                 <div className="flex items-center space-x-6">
-                  <div className="relative">
+                  <div className="relative" onMouseLeave={() => setNotifOpen(false)}>
                     <button onClick={() => { setNotifOpen(!notifOpen); fetchUnread(user?.id) }} className="p-2 rounded-xl hover:bg-heritage-gold/50">
-                      <Bell className="w-5 h-5 text-gray-700" />
+                      <Bell className="w-5 h-5 text-[var(--text)]" />
                       {unreadCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{unreadCount}</span>
                       )}
                     </button>
                     {notifOpen && (
                       <div className="absolute right-0 mt-2 w-80 z-50">
-                        <div className="bg-white rounded shadow-lg p-3">
+                        <div className="card rounded shadow-lg p-3">
                           <NotificationsList />
                         </div>
                       </div>
                     )}
                   </div>
-                  <span className="text-gray-700 font-medium px-4 py-2 bg-white/50 rounded-xl backdrop-blur-sm">
-                    {translatedName || profile?.name}
-                  </span>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-heritage-gold transition-all duration-300 hover:scale-105 transform hover:translate-y-[-2px] px-4 py-2 rounded-xl hover:bg-heritage-gold/50"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>{t('navigation.signout')}</span>
-                  </button>
+                  {/* Profile dropdown */}
+                  <div className="relative">
+                    <button className="flex items-center space-x-3 px-3 py-2 rounded-xl hover:bg-heritage-gold/20" onClick={() => setIsMenuOpen(s => !s)}>
+                      {profile?.profile_image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={profile.profile_image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-heritage-gold to-heritage-red text-white flex items-center justify-center font-semibold">
+                          {profile?.name ? profile.name.split(' ').map(s=>s[0]).slice(0,2).join('') : <User className="w-4 h-4" />}
+                        </div>
+                      )}
+                      <div className="text-left">
+                        <div className="text-sm font-medium text-[var(--text)]">{translatedName || profile?.name}</div>
+                        <div className="text-xs text-[var(--muted)]">{profile?.role || ''}</div>
+                      </div>
+                    </button>
+                    {isMenuOpen && (
+                      <div className="absolute right-0 mt-2 w-48 z-50" onMouseLeave={() => setIsMenuOpen(false)}>
+                        <div className="card rounded shadow-lg p-2">
+                          <Link href="/profile" className="block px-3 py-2 rounded hover:bg-[var(--bg-2)]">{t('navigation.profile') || 'Profile'}</Link>
+                          <button onClick={toggle} className="w-full text-left px-3 py-2 rounded hover:bg-[var(--bg-2)]">{theme === 'dark' ? <span className="flex items-center space-x-2"><Sun className="w-4 h-4" /> <span>{t('navigation.light') || 'Light'}</span></span> : <span className="flex items-center space-x-2"><Moon className="w-4 h-4" /> <span>{t('navigation.dark') || 'Dark'}</span></span>}</button>
+                          <button onClick={handleSignOut} className="w-full text-left px-3 py-2 rounded hover:bg-[var(--bg-2)] flex items-center space-x-2"><LogOut className="w-4 h-4" /><span>{t('navigation.signout')}</span></button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
-            ) : (
+                ) : (
               <div className="flex items-center space-x-6">
                 <Link 
                   href="/auth/signin"
-                  className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] px-4 py-2 rounded-xl hover:bg-heritage-gold/50"
+                  className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium hover:scale-105 transform hover:translate-y-[-2px] px-4 py-2 rounded-xl hover:bg-heritage-gold/50"
                 >
                   {t('navigation.signin')}
                 </Link>
@@ -241,7 +259,7 @@ export default function Navbar() {
             )}
             {/* Language Selector */}
             <select
-              className="ml-4 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-heritage-gold"
+              className="ml-4 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-2)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-heritage-gold"
               value={currentLanguage}
               onChange={handleLanguageChange}
               disabled={languageLoading}
@@ -255,29 +273,40 @@ export default function Navbar() {
             </select>
           </div>
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-3 rounded-2xl text-gray-700 hover:text-heritage-gold hover:bg-heritage-gold/50 transition-all duration-300 hover:scale-105"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile theme toggle (visible on small screens) */}
+            <div className="md:hidden flex items-center space-x-2">
+            <button
+              onClick={() => toggle()}
+              className="theme-toggle p-1"
+              data-theme={theme}
+              aria-label="Toggle theme"
+            >
+              <div className="knob" />
+            </button>
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-3 rounded-2xl text-[var(--text)] hover:text-heritage-gold hover:bg-heritage-gold/50 transition-all duration-300 hover:scale-105"
+            >
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-6 border-t border-heritage-gold/50 bg-white/95 backdrop-blur-md rounded-3xl mt-4 shadow-medium animate-slide-in-up">
+          <div className="md:hidden py-6 border-t border-heritage-gold/50 bg-[var(--bg-2)]/95 backdrop-blur-md rounded-3xl mt-4 shadow-medium animate-slide-in-up text-[var(--text)]">
             <div className="flex flex-col space-y-4">
               <Link 
                 href="/marketplace" 
-                className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navigation.marketplace')}
               </Link>
               <Link 
                 href="/auctions" 
-                className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span className="inline-flex items-center">
@@ -287,17 +316,17 @@ export default function Navbar() {
                   )}
                 </span>
               </Link>
-              {loading ? (
+          {loading ? (
                 <div className="space-y-4">
-                  <div className="w-32 h-8 bg-gray-200 rounded animate-pulse mx-6"></div>
-                  <div className="w-32 h-8 bg-gray-200 rounded animate-pulse mx-6"></div>
+            <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
+            <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
                 </div>
               ) : user ? (
                 <>
                   {profile?.role === 'seller' && (
                     <Link 
                       href="/dashboard" 
-                      className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                      className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {t('navigation.dashboard')}
@@ -305,25 +334,25 @@ export default function Navbar() {
                   )}
                   <Link 
                     href="/notifications" 
-                    className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('navigation.notifications') || 'Notifications'}
                   </Link>
                   <Link 
                     href="/cart" 
-                    className="text-gray-700 hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
+                    className="text-[var(--text)] hover:text-heritage-gold transition-all duration-300 font-medium px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl hover:translate-x-2 transform"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {t('navigation.cart')}
                   </Link>
-                  <div className="pt-4 border-t border-heritage-gold/50 px-6">
-                    <span className="text-gray-700 font-medium block mb-3 px-4 py-2 bg-white/50 rounded-xl backdrop-blur-sm">
+                    <div className="pt-4 border-t border-heritage-gold/50 px-6">
+                    <span className="text-[var(--text)] font-medium block mb-3 px-4 py-2 bg-[var(--bg-2)] rounded-xl backdrop-blur-sm">
                       {translatedName || profile?.name}
                     </span>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center space-x-2 text-gray-700 hover:text-heritage-gold transition-all duration-300 px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl w-full hover:translate-x-2 transform"
+                      className="flex items-center space-x-2 text-[var(--text)] hover:text-heritage-gold transition-all duration-300 px-6 py-3 hover:bg-heritage-gold/50 rounded-2xl w-full hover:translate-x-2 transform"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>{t('navigation.signout')}</span>
@@ -351,12 +380,12 @@ export default function Navbar() {
 
               {/* Mobile Language Selector */}
               <div className="pt-4 border-t border-heritage-gold/50 px-6">
-                <label htmlFor="mobile-language" className="block text-sm text-gray-600 mb-2">
+                <label htmlFor="mobile-language" className="block text-sm text-[var(--muted)] mb-2">
                   {t('navigation.language')}
                 </label>
                 <select
                   id="mobile-language"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-heritage-gold"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-2)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-heritage-gold"
                   value={currentLanguage}
                   onChange={handleLanguageChange}
                   disabled={languageLoading}
@@ -368,6 +397,22 @@ export default function Navbar() {
                     </option>
                   ))}
                 </select>
+              </div>
+              {/* Mobile Theme Toggle */}
+              <div className="pt-4 px-6">
+                <label className="block text-sm text-gray-600 mb-2">{t('navigation.theme') || 'Theme'}</label>
+                <div>
+                  <button
+                    onClick={() => { toggle(); }}
+                    className="theme-toggle"
+                    data-theme={theme}
+                    aria-pressed={theme === 'dark'}
+                    aria-label="Toggle theme"
+                  >
+                    <div className="knob" />
+                    <div className="text-xs font-medium ml-2">{theme === 'dark' ? (t('navigation.dark') || 'Dark') : (t('navigation.light') || 'Light')}</div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

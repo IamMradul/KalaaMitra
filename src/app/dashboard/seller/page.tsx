@@ -1,5 +1,6 @@
-'use client'
+ 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
@@ -444,8 +445,8 @@ export default function SellerDashboard() {
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full mx-auto mb-4"
           />
-          <p className="text-gray-600">Loading dashboard...</p>
-          <p className="text-sm text-gray-400 mt-2">Please wait while we verify your account</p>
+          <p className="text-[var(--muted)]">Loading dashboard...</p>
+          <p className="text-sm text-[var(--muted)] mt-2">Please wait while we verify your account</p>
         </div>
       </div>
     )
@@ -455,8 +456,8 @@ export default function SellerDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Access denied or user not found</p>
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-[var(--muted)]">Access denied or user not found</p>
+          <p className="text-sm text-[var(--muted)] mt-2">
             User: {user ? 'Yes' : 'No'} | Profile: {profile ? 'Yes' : 'No'} | Role: {profile?.role}
           </p>
         </div>
@@ -465,20 +466,20 @@ export default function SellerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 py-8">
+    <div className="min-h-screen heritage-bg py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div
+            <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('seller.title')}</h1>
-          <p className="text-lg text-gray-600">{t('seller.subtitle')}</p>
+          <h1 className="text-4xl font-bold text-[var(--text)] mb-4">{t('seller.title')}</h1>
+          <p className="text-lg text-[var(--muted)]">{t('seller.subtitle')}</p>
           
           {/* Debug Info */}
-          <div className="mt-4 p-3 bg-gray-100 rounded-lg text-sm text-gray-600">
+              <div className="mt-4 p-3 card rounded-lg text-sm text-[var(--muted)]">
             <p><strong>Debug Info:</strong></p>
             <p>User ID: {user?.id}</p>
             <p>Profile Role: {profile?.role}</p>
@@ -510,12 +511,12 @@ export default function SellerDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
+              className="card-glass rounded-xl p-6 mb-8 border border-[var(--border)]"
         >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">{t('seller.quickActions')}</h2>
+          <h2 className="text-2xl font-semibold text-[var(--text)] mb-4">{t('seller.quickActions')}</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">{t('seller.productManagement')}</h3>
+              <h3 className="text-lg font-medium text-[var(--text)] mb-2">{t('seller.productManagement')}</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => setShowAIProductForm(true)}
@@ -524,11 +525,11 @@ export default function SellerDashboard() {
                   <Sparkles className="w-4 h-4 mr-2" />
                   {t('seller.addProductWithAI')}
                 </button>
-                <div className="text-xs text-gray-600 text-center">{t('seller.addProductHint')}</div>
+                <div className="text-xs text-[var(--muted)] text-center">{t('seller.addProductHint')}</div>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">{t('seller.viewYourStall')}</h3>
+              <h3 className="text-lg font-medium text-[var(--text)] mb-2">{t('seller.viewYourStall')}</h3>
               <Link
                 href={`/stall/${user.id}`}
                 className="inline-flex items-center justify-center w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all duration-200"
@@ -536,7 +537,7 @@ export default function SellerDashboard() {
                 <Eye className="w-4 h-4 mr-2" />
                 {t('seller.viewPublicStall')}
               </Link>
-              <div className="text-xs text-gray-600 text-center mt-2">{t('seller.viewStallHint')}</div>
+              <div className="text-xs text-[var(--muted)] text-center mt-2">{t('seller.viewStallHint')}</div>
             </div>
           </div>
         </motion.div>
@@ -546,9 +547,9 @@ export default function SellerDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-8 border border-orange-200"
+              className="card-glass rounded-xl p-6 mb-8 border border-[var(--border)]"
         >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">{t('seller.analyticsTitle')}</h2>
+          <h2 className="text-2xl font-semibold text-[var(--text)] mb-4">{t('seller.analyticsTitle')}</h2>
           <SellerAnalytics sellerId={user.id} />
         </motion.div>
 
@@ -557,12 +558,12 @@ export default function SellerDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-orange-200"
+              className="card-glass rounded-xl p-6 border border-[var(--border)]"
         >
           {/* Auction creation form for sellers */}
-          <div className="mb-6 border p-4 rounded">
+          <div className="mb-6 border p-4 rounded bg-[var(--bg-2)] border-[var(--border)]">
             <h3 className="font-semibold mb-2">{t('auction.title')} - {t('common.save')}</h3>
-            <div className="text-sm text-gray-600 mb-3">{t('product.byAuthor', { name: profile?.name || '' })}</div>
+                <div className="text-sm text-[var(--muted)] mb-3">{t('product.byAuthor', { name: profile?.name || '' })}</div>
             <form onSubmit={async (e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget as HTMLFormElement)
@@ -590,24 +591,24 @@ export default function SellerDashboard() {
             }}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                 <div>
-                  <label className="block text-xs text-gray-600">{t('product.byAuthor')}</label>
-                  <select name="product_id" className="border p-2 rounded w-full" required>
+                  <label className="block text-xs text-[var(--muted)]">{t('product.byAuthor')}</label>
+                  <select name="product_id" className="border p-2 rounded w-full bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)]" required>
                     <option value="">Select product</option>
                     {products.map(p => (<option key={p.id} value={p.id}>{p.title}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600">{t('product.addToCart')}</label>
-                  <input name="starting_price" type="number" placeholder={t('auction.enterBid')} className="border p-2 rounded w-full" required />
+                  <label className="block text-xs text-[var(--muted)]">{t('product.addToCart')}</label>
+                  <input name="starting_price" type="number" placeholder={t('auction.enterBid')} className="border p-2 rounded w-full bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)]" required />
                 </div>
                 <div className="col-span-1 md:col-span-3 grid md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-600">Starts at</label>
-                    <input name="starts_at" type="datetime-local" className="border p-2 rounded w-full" />
+                    <label className="block text-xs text-[var(--muted)]">Starts at</label>
+                    <input name="starts_at" type="datetime-local" className="border p-2 rounded w-full bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)]" />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600">Ends at</label>
-                    <input name="ends_at" type="datetime-local" className="border p-2 rounded w-full" />
+                    <label className="block text-xs text-[var(--muted)]">Ends at</label>
+                    <input name="ends_at" type="datetime-local" className="border p-2 rounded w-full bg-[var(--bg-2)] text-[var(--text)] border-[var(--border)]" />
                   </div>
                 </div>
                 <div className="col-span-1 md:col-span-3">
@@ -617,12 +618,12 @@ export default function SellerDashboard() {
             </form>
           </div>
           {/* Seller's Auctions Management */}
-          <div className="mb-6 border p-4 rounded">
+          <div className="mb-6 border p-4 rounded bg-[var(--bg-2)] border-[var(--border)]">
             <h3 className="font-semibold mb-2">Your Auctions</h3>
             <SellerAuctionsList sellerId={user.id} />
           </div>
           <div className="flex justify-between items-center mb-6">
-      <h2 className="text-2xl font-semibold text-gray-900">{t('seller.yourProducts')}</h2>
+      <h2 className="text-2xl font-semibold text-[var(--text)]">{t('seller.yourProducts')}</h2>
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowAIProductForm(true)}
@@ -637,7 +638,7 @@ export default function SellerDashboard() {
                     signOut()
                   }
                 }}
-                className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                className="flex items-center px-4 py-2 border border-[var(--border)] text-[var(--text)] rounded-lg hover:bg-[var(--bg-2)] transition-all duration-200"
               >
                 <LogOut className="w-4 h-4 mr-2" />
         {t('navigation.signout')}
@@ -647,18 +648,18 @@ export default function SellerDashboard() {
 
           {productsLoading ? (
             <div className="text-center py-12">
-              <motion.div
+        <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full mx-auto mb-4"
               />
-              <p className="text-gray-500 text-lg">{t('seller.loadingProducts')}</p>
+        <p className="text-[var(--muted)] text-lg">{t('seller.loadingProducts')}</p>
             </div>
           ) : products.length === 0 ? (
             <div className="text-center py-12">
-              <Palette className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">{t('seller.noProducts')}</p>
-              <p className="text-gray-400">{t('seller.startByAddingFirst')}</p>
+        <Palette className="w-16 h-16 text-[var(--muted)] mx-auto mb-4" />
+        <p className="text-[var(--muted)] text-lg">{t('seller.noProducts')}</p>
+        <p className="text-[var(--muted)]">{t('seller.startByAddingFirst')}</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -667,9 +668,9 @@ export default function SellerDashboard() {
                   key={product.id}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200"
+          className="card border overflow-hidden hover:shadow-lg transition-shadow duration-200"
                 >
-                  <div className="h-48 bg-gray-200 flex items-center justify-center">
+          <div className="h-48 bg-[var(--bg-2)] flex items-center justify-center">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
@@ -677,26 +678,26 @@ export default function SellerDashboard() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Palette className="w-12 h-12 text-gray-400" />
+                      <Palette className="w-12 h-12 text-[var(--muted)]" />
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 mb-2">{product.title}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-                    <p className="text-lg font-bold text-orange-600">₹{product.price}</p>
+                    <h3 className="font-semibold text-[var(--text)] mb-2">{product.title}</h3>
+                    <p className="text-sm text-[var(--muted)] mb-2">{product.category}</p>
+                    <p className="text-lg font-bold text-orange-500">₹{product.price}</p>
                     <div className="flex space-x-2 mt-3">
                       <button
                         onClick={() => {
                           setEditingProduct(product)
                         }}
-                        className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-[var(--border)] rounded-md text-[var(--text)] hover:bg-[var(--bg-2)] transition-colors"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         {t('common.edit')}
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(product.id)}
-                        className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-red-300 rounded-md text-red-700 hover:bg-red-50 transition-colors"
+                        className="flex-1 flex items-center justify-center px-3 py-2 text-sm border border-red-300 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
                         {t('common.delete')}

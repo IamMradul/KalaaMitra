@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import ThemeProvider from '@/components/ThemeProvider'
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TranslationDebug from "@/components/TranslationDebug";
@@ -43,6 +44,7 @@ export default async function RootLayout({
       >
         <AuthProvider>
           <LanguageProvider>
+            <ThemeProvider>
             <div className="flex flex-col min-h-screen">
               <Navbar />
               <main className="flex-1">
@@ -51,6 +53,7 @@ export default async function RootLayout({
               <Footer />
             </div>
             <TranslationDebug />
+            </ThemeProvider>
           </LanguageProvider>
         </AuthProvider>
       </body>
