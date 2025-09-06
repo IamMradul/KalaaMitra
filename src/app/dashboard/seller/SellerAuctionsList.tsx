@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, Database } from '@/lib/supabase'
 import { useTranslation } from 'react-i18next'
+
+type AuctionRow = Database['public']['Tables']['auctions']['Row'] & { product_title?: string }
 
 export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
   const { t } = useTranslation()
-  const [auctions, setAuctions] = useState<any[]>([])
+  const [auctions, setAuctions] = useState<AuctionRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -17,17 +19,17 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
     setLoading(true)
     try {
       const { data } = await supabase.from('auctions').select('*').eq('seller_id', sellerId).order('created_at', { ascending: false })
-      const rows = data || []
+      const rows = (data || []) as Database['public']['Tables']['auctions']['Row'][]
       // fetch product titles for these auctions
-      const productIds = Array.from(new Set(rows.map((r: any) => r.product_id).filter(Boolean)))
-      let productMap: Record<string, string> = {}
+      const productIds = Array.from(new Set(rows.map((r) => r.product_id).filter(Boolean)))
+  const productMap: Record<string, string> = {}
       if (productIds.length > 0) {
         const { data: products } = await supabase.from('products').select('id,title').in('id', productIds)
-        for (const p of (products || [])) productMap[p.id] = p.title
+        for (const p of (products || []) as { id: string; title: string }[]) productMap[p.id] = p.title
       }
-      const withTitles = rows.map((r: any) => ({ ...r, product_title: productMap[r.product_id] || r.product_id }))
+      const withTitles: AuctionRow[] = rows.map((r) => ({ ...r, product_title: productMap[r.product_id] || r.product_id }))
       setAuctions(withTitles)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('fetch seller auctions err', err)
     }
     setLoading(false)
@@ -45,8 +47,9 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
         alert(t('auction.endedNoBids'))
       }
       fetchAuctions()
-    } catch (err: any) {
-      alert(t('errors.general') + ': ' + (err.message || err))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(t('errors.general') + ': ' + message)
     }
   }
 
@@ -58,8 +61,9 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
       if (error) throw error
       alert(t('auction.deleted'))
       fetchAuctions()
-    } catch (err: any) {
-      alert(t('errors.general') + ': ' + (err.message || err))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      alert(t('errors.general') + ': ' + message)
     }
   }
 
@@ -72,7 +76,7 @@ export default function SellerAuctionsList({ sellerId }: { sellerId: string }) {
         {auctions.map(a => (
           <div key={a.id} className="border p-3 rounded bg-white flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="font-semibold">{a.product_title || a.product?.title || a.product_id}</div>
+              <div className="font-semibold">{a.product_title || a.product_id}</div>
               <div className="text-sm text-gray-600">{t('auction.status')}: {a.status} | {t('auction.title')}: {a.starts_at ? new Date(a.starts_at).toLocaleString() : '—'} → {a.ends_at ? new Date(a.ends_at).toLocaleString() : '—'}</div>
             </div>
             <div className="mt-3 md:mt-0 flex space-x-2">

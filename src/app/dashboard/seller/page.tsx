@@ -583,8 +583,9 @@ export default function SellerDashboard() {
                 fetchProducts()
                 // optional: refresh SellerAuctionsList by emitting event or refetch via state; simple approach: reload page
                 // location.reload()
-              } catch (err: any) {
-                alert(t('errors.general') + ': ' + (err.message || err))
+              } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err)
+                alert(t('errors.general') + ': ' + message)
               }
             }}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">

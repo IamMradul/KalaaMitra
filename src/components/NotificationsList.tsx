@@ -1,12 +1,14 @@
  'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, Database } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+
+type NotificationRow = Database['public']['Tables']['notifications']['Row']
 
 export default function NotificationsList() {
   const { user } = useAuth()
-  const [notes, setNotes] = useState<any[]>([])
+  const [notes, setNotes] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,8 +20,8 @@ export default function NotificationsList() {
     setLoading(true)
     try {
       const { data } = await supabase.from('notifications').select('*').eq('user_id', user?.id).order('created_at', { ascending: false })
-      setNotes(data || [])
-    } catch (err) {
+      setNotes((data || []) as NotificationRow[])
+    } catch (err: unknown) {
       console.error('fetch notifications', err)
     }
     setLoading(false)
@@ -29,7 +31,7 @@ export default function NotificationsList() {
     try {
       await supabase.from('notifications').update({ read: true }).eq('id', id)
       fetchNotes()
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('mark read', err)
     }
   }

@@ -89,7 +89,7 @@ function MarketplaceContent() {
           .from('auctions')
           .select('product_id,status,starts_at')
           .in('status', ['scheduled','running'])
-        const ids = (aData || []).map((a: any) => a.product_id)
+  const ids = (aData || []).map((a: { product_id: string }) => a.product_id)
         setAuctionedProductIds(ids)
       } catch (err) {
         console.error('Error fetching auctions for marketplace:', err)

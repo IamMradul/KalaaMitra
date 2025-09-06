@@ -5,7 +5,15 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from 'react-i18next'
 
-type Auction = any
+type Auction = {
+  id: string
+  product_id: string
+  seller_id: string
+  starting_price: number
+  starts_at?: string | null
+  ends_at?: string | null
+  status?: string
+}
 
 type Props = {
   productId: string
@@ -15,7 +23,7 @@ export default function AuctionWidget({ productId }: Props) {
   const { user } = useAuth()
   const { t } = useTranslation()
   const [auction, setAuction] = useState<Auction | null>(null)
-  const [bids, setBids] = useState<any[]>([])
+  const [bids, setBids] = useState<Array<{ id: string; bidder_id: string; amount: number; bidder?: { name?: string } }>>([])
   const [amount, setAmount] = useState<number | ''>('')
   const [loading, setLoading] = useState(true)
   const [timeLeft, setTimeLeft] = useState<string | null>(null)
@@ -29,7 +37,7 @@ export default function AuctionWidget({ productId }: Props) {
     if (auction?.ends_at) {
       const update = () => {
         const now = Date.now()
-        const end = new Date(auction.ends_at).getTime()
+  const end = auction.ends_at ? new Date(auction.ends_at).getTime() : 0
         const diff = end - now
         if (diff <= 0) {
           setTimeLeft('00:00:00')
@@ -69,7 +77,7 @@ export default function AuctionWidget({ productId }: Props) {
         setAuction(null)
         setBids([])
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('fetchAuction err', err)
     }
     setLoading(false)
@@ -83,7 +91,7 @@ export default function AuctionWidget({ productId }: Props) {
         .eq('auction_id', auctionId)
         .order('amount', { ascending: false })
       setBids(data || [])
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('fetchBids err', err)
     }
   }
@@ -101,9 +109,9 @@ export default function AuctionWidget({ productId }: Props) {
       const endTs = fresh.ends_at ? new Date(fresh.ends_at).getTime() : 0
       if (fresh.status !== 'running' || (endTs && endTs <= Date.now())) {
         setAuction(fresh)
-        return alert(t('auction.ended'))
+    return alert(t('auction.ended'))
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('refresh auction failed', err)
     }
 
@@ -120,7 +128,7 @@ export default function AuctionWidget({ productId }: Props) {
       if (error) throw error
       setAmount('')
       fetchBids(auction.id)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('placeBid err', err)
       alert(t('auction.bidFailed'))
     }
@@ -151,7 +159,17 @@ export default function AuctionWidget({ productId }: Props) {
       )}
 
       <div className="mb-3">
-        <input type="number" value={amount as any} onChange={e => setAmount(e.target.value ? Number(e.target.value) : '')} placeholder={t('auction.enterBid')} className="w-full border p-2 rounded" disabled={auctionEnded} />
+        <input
+          type="number"
+          value={amount === '' ? '' : String(amount)}
+          onChange={(e) => {
+            const v = e.target.value
+            setAmount(v ? Number(v) : '')
+          }}
+          placeholder={t('auction.enterBid')}
+          className="w-full border p-2 rounded"
+          disabled={auctionEnded}
+        />
       </div>
       <div className="flex space-x-2">
         <button onClick={placeBid} disabled={auctionEnded} className={`px-4 py-2 ${auctionEnded ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-orange-500 text-white'} rounded`}>{auctionEnded ? t('auction.ended') : t('auction.placeBid')}</button>
@@ -160,7 +178,7 @@ export default function AuctionWidget({ productId }: Props) {
       <div className="mt-4">
         <h4 className="font-semibold">{t('auction.recentBids')}</h4>
         <ul className="mt-2">
-          {bids.map(b => (
+      {bids.map(b => (
             <li key={b.id} className="flex justify-between py-1 border-b">
               <span>{b.bidder?.name || b.bidder_id}</span>
               <span>₹{b.amount}</span>

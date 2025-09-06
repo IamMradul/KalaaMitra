@@ -2,6 +2,14 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { use } from 'react'
 
+type AuctionRow = {
+  id: string
+  product_id: string
+  status?: string
+  starting_price?: number
+  product?: { title?: string; image_url?: string; price?: number }
+}
+
 async function fetchAuctions() {
   const { data, error } = await supabase
     .from('auctions')
@@ -20,7 +28,7 @@ export default async function AuctionsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold mb-6">Auctions</h1>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {auctions.map((a: any) => (
+          {auctions.map((a: AuctionRow) => (
             <div key={a.id} className="bg-white rounded-lg border p-4">
               <div className="h-48 bg-gray-100 flex items-center justify-center mb-3">
                 {a.product?.image_url ? <img src={a.product.image_url} className="w-full h-full object-cover" /> : <div className="text-gray-400">No image</div>}

@@ -18,9 +18,9 @@ export async function POST(req: Request) {
     for (const a of toEnd) {
       try {
         const { data: bids } = await supabase.from('bids').select('*').eq('auction_id', a.id).order('amount', { ascending: false }).limit(1)
-        const winner = bids?.[0]
-        const updates: any = { status: 'completed' }
-        if (winner) updates.winner_id = winner.bidder_id
+  const winner = bids?.[0]
+  const updates: Partial<{ status: string; winner_id?: string | null }> = { status: 'completed' }
+  if (winner) updates.winner_id = winner.bidder_id
         const { error: updErr } = await supabase.from('auctions').update(updates).eq('id', a.id)
         if (updErr) {
           console.error('failed to update auction', a.id, updErr)
@@ -47,13 +47,14 @@ export async function POST(req: Request) {
           }
         }
         ended++
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('error ending auction', a.id, err)
       }
     }
 
     return NextResponse.json({ ended })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

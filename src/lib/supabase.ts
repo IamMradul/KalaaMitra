@@ -137,7 +137,7 @@ export type Database = {
           title: string
           body: string
           read: boolean
-          metadata: any
+          metadata: Record<string, unknown>
           created_at: string
         }
         Insert: {
@@ -146,7 +146,7 @@ export type Database = {
           title: string
           body: string
           read?: boolean
-          metadata?: any
+          metadata?: Record<string, unknown>
           created_at?: string
         }
         Update: {
@@ -155,7 +155,7 @@ export type Database = {
           title?: string
           body?: string
           read?: boolean
-          metadata?: any
+          metadata?: Record<string, unknown>
           created_at?: string
         }
       }
