@@ -1,27 +1,34 @@
 'use client'
+import React from 'react';
 import { notFound } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { Trophy } from 'lucide-react';
 
 
-export default async function PublicProfilePage({ params }: { params: { user_id: string } }) {
-  const { user_id } = params;
+
+async function getProfileData(user_id: string) {
   // Fetch user profile from Supabase
   const { data: profile, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user_id)
     .single();
-
-  if (error || !profile) return notFound();
-
+  if (error || !profile) return { profile: null, mitraPoints: 0 };
   // Dynamically calculate MitraPoints (10 per auction win)
-  const { data: auctions, error: auctionError } = await supabase
+  const { data: auctions } = await supabase
     .from('auctions')
     .select('id')
     .eq('winner_id', user_id);
   const mitraPoints = auctions && Array.isArray(auctions) ? auctions.length * 10 : 0;
+  return { profile, mitraPoints };
+}
 
+export default function PublicProfilePage({ params }: { params: { user_id: string } }) {
+  // Unwrap params using React.use(params) as required by Next.js 15+
+  const unwrapped = React.use(params);
+  const { user_id } = unwrapped as { user_id: string };
+  const { profile, mitraPoints } = React.use(profilePromise(user_id));
+  if (!profile) return notFound();
   return (
     <main className="container-custom py-10 max-w-xl mx-auto">
       <div className="flex flex-col items-center bg-white dark:bg-[#18181b] rounded-3xl shadow-xl p-8 border border-yellow-200/30 dark:border-yellow-400/10">
@@ -48,6 +55,11 @@ export default async function PublicProfilePage({ params }: { params: { user_id:
       </div>
     </main>
   );
+}
+
+// Helper to use async/await in a sync component (for server components)
+function profilePromise(user_id: string) {
+  return getProfileData(user_id);
 }
 
 export const dynamic = 'force-dynamic';
