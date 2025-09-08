@@ -1,7 +1,9 @@
-'use client'
 import { notFound } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { Trophy } from 'lucide-react';
+import type { Metadata, ResolvingMetadata } from 'next';
+// If available, import the recommended type for App Router page props
+// Otherwise, fallback to the inline type
 
 
 
@@ -23,7 +25,10 @@ async function getProfileData(user_id: string) {
 }
 
 
-export default async function PublicProfilePage({ params }: { params: { user_id: string } }) {
+// Use the recommended Next.js type for page props if available
+// export default async function PublicProfilePage({ params }: PageProps<{ user_id: string }>) {
+// Fallback to inline type if PageProps is not available
+export default async function Page({ params }: { params: { user_id: string } }) {
   const { user_id } = params;
   const { profile, mitraPoints } = await getProfileData(user_id);
   if (!profile) return notFound();
