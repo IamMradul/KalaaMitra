@@ -42,7 +42,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const router = useRouter();
   const { currentLanguage, changeLanguage, isLoading: languageLoading } = useLanguage();
-  const { theme, toggle } = useTheme ? useTheme() : { theme: 'light', toggle: () => {} };
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     if (profile) {
@@ -57,11 +57,13 @@ export default function ProfilePage() {
   if (loading) return <div className="container-custom py-10">Loading...</div>;
   if (!user) return <div className="container-custom py-10">Please sign in to view your profile.</div>;
 
-  const handleChange = (e: any) => {
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async (e: any) => {
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
     const { error } = await supabase.from('profiles').update({
