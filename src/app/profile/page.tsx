@@ -34,7 +34,7 @@ export default function ProfilePage() {
     { code: 'telgu', label: 'తెలుగు', flag: '🇮🇳' },
     { code: 'urdu', label: 'اردو', flag: '🇵🇰' },
   ];
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const [form, setForm] = useState({ name: '', bio: '', profile_image: '' });
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -199,9 +199,9 @@ export default function ProfilePage() {
         </section>
         {/* Account Actions Section */}
         <section className="flex flex-col gap-4 pt-8">
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/'); }} className="flex items-center gap-3 px-6 py-3 rounded-lg bg-gradient-to-r from-red-200 via-pink-200 to-yellow-100 dark:from-red-900 dark:via-pink-900 dark:to-yellow-900 text-red-700 dark:text-yellow-100 font-bold hover:bg-red-200 dark:hover:bg-red-800 transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95 focus:ring-4 focus:ring-yellow-200 dark:focus:ring-pink-200/50 text-base shadow-md">
-      <LogOut className="w-6 h-6" /> Sign Out
-      </button>
+      <button onClick={async () => { await signOut(); router.push('/'); }} className="flex items-center gap-3 px-6 py-3 rounded-lg bg-gradient-to-r from-red-200 via-pink-200 to-yellow-100 dark:from-red-900 dark:via-pink-900 dark:to-yellow-900 text-red-700 dark:text-yellow-100 font-bold hover:bg-red-200 dark:hover:bg-red-800 transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95 focus:ring-4 focus:ring-yellow-200 dark:focus:ring-pink-200/50 text-base shadow-md">
+    <LogOut className="w-6 h-6" /> Sign Out
+    </button>
     </section>
     </div>
   </div>
