@@ -1,4 +1,11 @@
 {
+  "crons": [
+    {
+      "path": "/api/auction/cron/end",
+      "schedule": "0 10 * * *",
+      "method": "POST"
+    }
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
