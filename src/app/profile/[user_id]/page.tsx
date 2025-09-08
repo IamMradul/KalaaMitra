@@ -1,5 +1,4 @@
 'use client'
-import React from 'react';
 import { notFound } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { Trophy } from 'lucide-react';
@@ -23,11 +22,10 @@ async function getProfileData(user_id: string) {
   return { profile, mitraPoints };
 }
 
-export default function PublicProfilePage({ params }: { params: { user_id: string } }) {
-  // Unwrap params using React.use(params) as required by Next.js 15+
-  const unwrapped = React.use(params);
-  const { user_id } = unwrapped as { user_id: string };
-  const { profile, mitraPoints } = React.use(profilePromise(user_id));
+
+export default async function PublicProfilePage({ params }: { params: { user_id: string } }) {
+  const { user_id } = params;
+  const { profile, mitraPoints } = await getProfileData(user_id);
   if (!profile) return notFound();
   return (
     <main className="container-custom py-10 max-w-xl mx-auto">
@@ -57,9 +55,6 @@ export default function PublicProfilePage({ params }: { params: { user_id: strin
   );
 }
 
-// Helper to use async/await in a sync component (for server components)
-function profilePromise(user_id: string) {
-  return getProfileData(user_id);
-}
+
 
 export const dynamic = 'force-dynamic';
