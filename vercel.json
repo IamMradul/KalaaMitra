@@ -2,8 +2,7 @@
   "crons": [
     {
       "path": "/api/auction/cron/end",
-      "schedule": "0 10 * * *",
-      "method": "POST"
+      "schedule": "0 10 * * *"
     }
   ],
   "buildCommand": "npm run build",
