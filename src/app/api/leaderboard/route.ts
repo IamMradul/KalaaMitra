@@ -35,7 +35,8 @@ export async function GET(req: Request) {
     // Fetch profile names for top 20
     const top = winners.slice(0, 20)
     const userIds = top.map(t => t.user_id)
-    let profiles: any[] = []
+  type Profile = { id: string; name: string };
+  let profiles: Profile[] = []
     if (userIds.length) {
       const { data: p } = await supabase.from('profiles').select('id,name').in('id', userIds)
       profiles = p || []
