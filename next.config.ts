@@ -18,12 +18,13 @@ const nextConfig: NextConfig = {
     // allow external hosts we commonly use for product images
     domains: [
       'm.media-amazon.com',
-  'tiimg.tistatic.com',
-  'encrypted-tbn0.gstatic.com',
-  'lh3.googleusercontent.com',
+      'tiimg.tistatic.com',
+      'encrypted-tbn0.gstatic.com',
+      'lh3.googleusercontent.com',
       'images.unsplash.com',
       'cdn.shopify.com',
       'i.imgur.com',
+      'upload.wikimedia.org', // allow Wikimedia images
       // include Supabase project hostname dynamically when provided via env
       ...(getSupabaseHost() ? [getSupabaseHost() as string] : []),
     ],

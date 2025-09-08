@@ -16,6 +16,8 @@ export async function POST(req: Request) {
 
     let ended = 0
     for (const a of toEnd) {
+      // Log auction id and seller_id for debugging
+      console.log('Ending auction:', { auction_id: a.id, seller_id: a.seller_id });
       try {
         const { data: bids } = await supabase.from('bids').select('*').eq('auction_id', a.id).order('amount', { ascending: false }).limit(1)
   const winner = bids?.[0]
@@ -26,6 +28,7 @@ export async function POST(req: Request) {
           console.error('failed to update auction', a.id, updErr)
           continue
         }
+        // Notify winner (buyer)
         if (winner) {
           try {
             // fetch product title if available
@@ -45,6 +48,43 @@ export async function POST(req: Request) {
           } catch (nerr) {
             console.error('notification insert failed', nerr)
           }
+        }
+        // Notify seller
+        try {
+          let productTitle = a.product_id
+          try {
+            const { data: p } = await supabase.from('products').select('title').eq('id', a.product_id).single()
+            if (p?.title) productTitle = p.title
+          } catch {}
+          const sellerNotification = {
+            user_id: a.seller_id,
+            title: 'Your auction has completed!',
+            body: `Your scheduled auction for "${productTitle}" has completed! Go to your dashboard to verify the results and manage the outcome.`,
+            read: false,
+            metadata: { auction_id: a.id, product_id: a.product_id, product_title: productTitle }
+          };
+          if (!a.seller_id) {
+            console.error('No seller_id for auction', a.id, a);
+          }
+          const { error: sellerNotifError } = await supabase.from('notifications').insert(sellerNotification);
+          if (sellerNotifError) {
+            console.error('seller notification insert failed', sellerNotifError, sellerNotification);
+            // Try again with minimal notification (no metadata)
+            const minimalNotification = {
+              user_id: a.seller_id,
+              title: 'Your auction has completed!',
+              body: `Your scheduled auction for "${productTitle}" has completed! Go to your dashboard to verify the results and manage the outcome.`,
+              read: false
+            };
+            const { error: minimalNotifError } = await supabase.from('notifications').insert(minimalNotification);
+            if (minimalNotifError) {
+              console.error('minimal seller notification insert failed', minimalNotifError, minimalNotification);
+            } else {
+              console.log('Minimal seller notification inserted successfully', minimalNotification);
+            }
+          }
+        } catch (nerr) {
+          console.error('seller notification insert failed (exception)', nerr, a);
         }
         ended++
       } catch (err: unknown) {

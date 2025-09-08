@@ -1,4 +1,5 @@
 'use client'
+import Leaderboard from '../components/Leaderboard'
 import Link from 'next/link'
 import { ArrowRight, Palette, ShoppingBag, Users, Shield, Zap } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -213,6 +214,16 @@ export default function Home() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+      {/* Leaderboard Section (public, always visible) */}
+      <section className="section-padding bg-white/80 dark:bg-gradient-to-br dark:from-[#18181b] dark:to-[#23232b]">
+        <div className="container-custom">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl sm:text-4xl font-extrabold mb-2 bg-gradient-to-r from-yellow-500 via-orange-400 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">{t('leaderboard.title', { defaultValue: 'Leaderboard' })}</h2>
+            <p className="text-lg text-gray-700 dark:text-yellow-100 font-medium">{t('leaderboard.desc', { defaultValue: 'Top buyers by MitraPoints (awarded for auction wins).' })}</p>
+          </div>
+          <Leaderboard embedMode />
         </div>
       </section>
     </div>

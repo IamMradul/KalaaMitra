@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/components/LanguageProvider'
-import { ShoppingCart, LogOut, Menu, X, Palette, Bell, Moon, Sun, User } from 'lucide-react'
+import { ShoppingCart, LogOut, Menu, X, Palette, Bell, Moon, Sun, User, Video } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
+import Leaderboard from './Leaderboard'
 import { supabase } from '@/lib/supabase'
+
 import NotificationsList from '@/components/NotificationsList'
 import { useTranslation } from 'react-i18next';
 import { translateText } from '@/lib/translate';
@@ -20,7 +22,9 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false)
   const [translatedName, setTranslatedName] = useState('')
   const [notifOpen, setNotifOpen] = useState(false)
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [mitraPoints, setMitraPoints] = useState<number | null>(null)
   const [hasLiveAuctions, setHasLiveAuctions] = useState(false)
   const { i18n, t } = useTranslation();
   const languages = [
@@ -81,6 +85,34 @@ export default function Navbar() {
     translateUserName()
   }, [profile?.name, currentLanguage])
 
+  // Fetch MitraPoints for signed-in user (10 MP per auction won)
+  useEffect(() => {
+    let mounted = true
+    const fetchPoints = async () => {
+      if (!user?.id) {
+        if (mounted) setMitraPoints(null)
+        return
+      }
+      try {
+        // count auctions where user is winner
+        const { count, error } = await supabase.from('auctions').select('*', { count: 'exact', head: true }).eq('winner_id', user.id)
+        if (error) {
+          console.error('fetchPoints error', error)
+          if (mounted) setMitraPoints(null)
+          return
+        }
+        const wins = (count || 0)
+        const pts = wins * 10
+        if (mounted) setMitraPoints(pts)
+      } catch (err) {
+        console.error('fetchPoints failed', err)
+        if (mounted) setMitraPoints(null)
+      }
+    }
+    fetchPoints()
+    return () => { mounted = false }
+  }, [user?.id])
+
   const fetchUnread = async (uid?: string | null) => {
     if (!uid) return setUnreadCount(0)
     try {
@@ -117,6 +149,41 @@ export default function Navbar() {
             </div>
             {/* Navigation placeholder */}
             <div className="hidden md:flex items-center space-x-10">
+            <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
+              <span className="block w-6 h-6">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                  <defs>
+                    <linearGradient id="trophyGold" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#FFD700" />
+                      <stop offset="1" stopColor="#FFB300" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold)" stroke="#B8860B" strokeWidth="1.2"/>
+                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
+                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
+                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                </svg>
+              </span>
+            </Link>
+            {/* Leaderboard Trophy icon (desktop only) */}
+            <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
+              <span className="block w-6 h-6">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                  <defs>
+                    <linearGradient id="trophyGold2" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#FFD700" />
+                      <stop offset="1" stopColor="#FFB300" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold2)" stroke="#B8860B" strokeWidth="1.2"/>
+                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
+                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
+                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                </svg>
+              </span>
+            </Link>
               <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
               <div className="w-20 h-8 bg-[var(--bg-2)] rounded animate-pulse"></div>
             </div>
@@ -143,14 +210,18 @@ export default function Navbar() {
     <nav className="glass-nav border-b border-heritage-gold/40 shadow-soft sticky top-0 z-50 heritage-bg">
       <div className="container-custom">
         <div className="flex justify-between items-center py-6">
-          {/* Logo */}
+          {/* Logo - Short brand for mobile, full for desktop */}
           <Link href="/" className="flex items-center space-x-4 group">
             <div className="w-14 h-14 bg-gradient-to-br from-[var(--heritage-gold)] to-[var(--heritage-red)] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-medium hover:shadow-glow animate-float-slow border-2 border-heritage-gold">
               <Palette className="w-7 h-7 text-white" />
             </div>
-              <span className="text-3xl font-bold heritage-title" key={`brand-${currentLanguage}`}>
-                {t('brand.name')}
-              </span>
+            <span className="text-3xl font-bold heritage-title hidden md:inline" key={`brand-${currentLanguage}`}>{t('brand.name')}</span>
+            <span className="text-3xl font-bold heritage-title md:hidden" key={`brand-short-${currentLanguage}`}>KM</span>
+            {/* Reel Icon with Coming Soon badge (badge above icon) - hide on mobile for clarity */}
+            <span className="relative flex flex-col items-center ml-2 hidden md:flex">
+              <span className="mb-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 text-white text-xs font-bold shadow animate-bounce z-10" style={{marginBottom: '0.25rem'}}>Reels Coming Soon</span>
+              <Video className="w-7 h-7 text-pink-500 animate-pulse" />
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -161,6 +232,23 @@ export default function Navbar() {
             >
               <span className="relative z-10">{t('navigation.marketplace')}</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-heritage-gold to-heritage-red transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+            <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
+              <span className="block w-6 h-6">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                  <defs>
+                    <linearGradient id="trophyGold3" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#FFD700" />
+                      <stop offset="1" stopColor="#FFB300" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGold3)" stroke="#B8860B" strokeWidth="1.2"/>
+                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
+                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
+                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                </svg>
+              </span>
             </Link>
             <Link 
               href="/auctions" 
@@ -213,32 +301,26 @@ export default function Navbar() {
                       </div>
                     )}
                   </div>
-                  {/* Profile dropdown */}
-                  <div className="relative">
-                    <button className="flex items-center space-x-3 px-3 py-2 rounded-xl hover:bg-heritage-gold/20" onClick={() => setIsMenuOpen(s => !s)}>
-                      {profile?.profile_image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={profile.profile_image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-heritage-gold to-heritage-red text-white flex items-center justify-center font-semibold">
-                          {profile?.name ? profile.name.split(' ').map(s=>s[0]).slice(0,2).join('') : <User className="w-4 h-4" />}
-                        </div>
-                      )}
-                      <div className="text-left">
-                        <div className="text-sm font-medium text-[var(--text)]">{translatedName || profile?.name}</div>
-                        <div className="text-xs text-[var(--muted)]">{profile?.role || ''}</div>
-                      </div>
-                    </button>
-                    {isMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-48 z-50" onMouseLeave={() => setIsMenuOpen(false)}>
-                        <div className="card rounded shadow-lg p-2">
-                          <Link href="/profile" className="block px-3 py-2 rounded hover:bg-[var(--bg-2)]">{t('navigation.profile') || 'Profile'}</Link>
-                          <button onClick={toggle} className="w-full text-left px-3 py-2 rounded hover:bg-[var(--bg-2)]">{theme === 'dark' ? <span className="flex items-center space-x-2"><Sun className="w-4 h-4" /> <span>{t('navigation.light') || 'Light'}</span></span> : <span className="flex items-center space-x-2"><Moon className="w-4 h-4" /> <span>{t('navigation.dark') || 'Dark'}</span></span>}</button>
-                          <button onClick={handleSignOut} className="w-full text-left px-3 py-2 rounded hover:bg-[var(--bg-2)] flex items-center space-x-2"><LogOut className="w-4 h-4" /><span>{t('navigation.signout')}</span></button>
-                        </div>
+                  {/* Profile avatar/name direct link to profile page (no dropdown) */}
+                  <Link href="/profile" className="flex items-center space-x-3 px-3 py-2 rounded-xl hover:bg-heritage-gold/20">
+                    {profile?.profile_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={profile.profile_image} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-heritage-gold to-heritage-red text-white flex items-center justify-center font-semibold">
+                        {profile?.name ? profile.name.split(' ').map(s=>s[0]).slice(0,2).join('') : <User className="w-4 h-4" />}
                       </div>
                     )}
-                  </div>
+                    <div className="text-left">
+                      <div className="flex items-center space-x-2">
+                        <div className="text-sm font-medium text-[var(--text)]">{translatedName || profile?.name}</div>
+                        {mitraPoints != null && (
+                          <div title="MitraPoints" className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">{mitraPoints} MP</div>
+                        )}
+                      </div>
+                      <div className="text-xs text-[var(--muted)]">{profile?.role || ''}</div>
+                    </div>
+                  </Link>
                 </div>
               </>
                 ) : (
@@ -257,24 +339,42 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
-            {/* Language Selector */}
-            <select
-              className="ml-4 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-2)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-heritage-gold"
-              value={currentLanguage}
-              onChange={handleLanguageChange}
-              disabled={languageLoading}
-              aria-label="Select language"
-            >
-              {languages.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.flag} {lang.label}
-                </option>
-              ))}
-            </select>
+            {/* Language Selector removed from Navbar */}
           </div>
 
           {/* Mobile theme toggle (visible on small screens) */}
             <div className="md:hidden flex items-center space-x-2">
+            {/* Profile image icon for mobile, always at top left of menu */}
+            {user && (
+              <Link href="/profile" className="mr-2 flex items-center justify-center">
+                {profile?.profile_image ? (
+                  <img src={profile.profile_image} alt="avatar" className="w-9 h-9 rounded-full object-cover border-2 border-blue-400" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold border-2 border-blue-400">
+                    {profile?.name ? profile.name[0] : <User className="w-5 h-5" />}
+                  </div>
+                )}
+              </Link>
+            )}
+            {/* Leaderboard button (mobile) */}
+            <Link href="/leaderboard" className="p-2 rounded-xl hover:bg-heritage-gold/50">
+              <span className="block w-6 h-6">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+                  <defs>
+                    <linearGradient id="trophyGoldMobile" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#FFD700" />
+                      <stop offset="1" stopColor="#FFB300" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M7 4V2h10v2h3a1 1 0 0 1 1 1v2c0 3.866-3.134 7-7 7s-7-3.134-7-7V5a1 1 0 0 1 1-1h3z" fill="url(#trophyGoldMobile)" stroke="#B8860B" strokeWidth="1.2"/>
+                  <ellipse cx="12" cy="19" rx="5" ry="2.5" fill="#FFF8DC" stroke="#B8860B" strokeWidth="1.1"/>
+                  <rect x="9" y="15" width="6" height="3" rx="1.2" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
+                  <path d="M4 7c0 2.5 1.5 4.5 4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                  <path d="M20 7c0 2.5-1.5 4.5-4 5.5" stroke="#B8860B" strokeWidth="1.1" fill="none"/>
+                </svg>
+              </span>
+            </Link>
+            {/* Theme toggle (mobile) */}
             <button
               onClick={() => toggle()}
               className="theme-toggle p-1"
@@ -291,6 +391,8 @@ export default function Navbar() {
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
+
+  {/* Leaderboard modal removed: always use /leaderboard page */}
         </div>
 
         {/* Mobile Navigation */}
@@ -316,6 +418,12 @@ export default function Navbar() {
                   )}
                 </span>
               </Link>
+              {/* Reels/Ads icon with Coming Soon badge, disabled */}
+              <div className="relative flex items-center px-6 py-3 rounded-2xl bg-gradient-to-r from-yellow-100/60 to-pink-100/60 dark:from-yellow-900/40 dark:to-pink-900/40 opacity-60 cursor-not-allowed select-none">
+                <Video className="w-6 h-6 text-pink-500 mr-3" />
+                <span className="font-medium text-pink-700 dark:text-pink-200">Reels/Ads</span>
+                <span className="absolute -top-2 right-4 bg-gradient-to-r from-yellow-400 to-pink-400 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow animate-bounce">Coming Soon</span>
+              </div>
           {loading ? (
                 <div className="space-y-4">
             <div className="w-32 h-8 bg-[var(--bg-2)] rounded animate-pulse mx-6"></div>
@@ -378,26 +486,7 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Mobile Language Selector */}
-              <div className="pt-4 border-t border-heritage-gold/50 px-6">
-                <label htmlFor="mobile-language" className="block text-sm text-[var(--muted)] mb-2">
-                  {t('navigation.language')}
-                </label>
-                <select
-                  id="mobile-language"
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-2)] text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-heritage-gold"
-                  value={currentLanguage}
-                  onChange={handleLanguageChange}
-                  disabled={languageLoading}
-                  aria-label="Select language"
-                >
-                  {languages.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Mobile Language Selector removed from Navbar */}
               {/* Mobile Theme Toggle */}
               <div className="pt-4 px-6">
                 <label className="block text-sm text-gray-600 mb-2">{t('navigation.theme') || 'Theme'}</label>

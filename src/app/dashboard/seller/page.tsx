@@ -478,23 +478,6 @@ export default function SellerDashboard() {
           <h1 className="text-4xl font-bold text-[var(--text)] mb-4">{t('seller.title')}</h1>
           <p className="text-lg text-[var(--muted)]">{t('seller.subtitle')}</p>
           
-          {/* Debug Info */}
-              <div className="mt-4 p-3 card rounded-lg text-sm text-[var(--muted)]">
-            <p><strong>Debug Info:</strong></p>
-            <p>User ID: {user?.id}</p>
-            <p>Profile Role: {profile?.role}</p>
-            <p>Products Count: {products.length}</p>
-            <p>Products Loading: {productsLoading ? 'Yes' : 'No'}</p>
-            <p>Database Status: {dbStatus}</p>
-            <p>Testing DB: {isTestingDb ? 'Yes' : 'No'}</p>
-            <button
-              onClick={testDatabaseConnection}
-              disabled={isTestingDb || dbStatus !== 'Unknown'}
-              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isTestingDb ? 'Testing...' : 'Test Database Connection'}
-            </button>
-          </div>
         </motion.div>
 
         {/* Profile Manager Section */}
